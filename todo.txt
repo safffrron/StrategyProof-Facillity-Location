@@ -1,0 +1,6 @@
+1. Add Interface to show with small number of agents with bruteforce testing that playing truthfully is a WDSE
+
+2. Add Interface to show that median mechnaism is 2- approximation of optimal. 
+
+3. Add MinMaxP mechanism of aggarwal et. al.
+
