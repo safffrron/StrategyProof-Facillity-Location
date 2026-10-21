@@ -7,11 +7,17 @@ median, otherwise flip a fair coin between the median's two peaks) are truthful 
 * A: exhaustive truthfulness checks (every profile, agent, misreport and prediction on a grid).
 * B: worst-case consistency and robustness against the theory, for several b/c and n.
 * C: figure - (a) the max-cost trade-off and lower bounds; (b) ratio against prediction error.
+* D: certified lower bounds for TIE mechanisms without predictions, social cost, three agents (Proposition 23).
+  ``--full`` re-solves the finer LP (about 5 minutes); otherwise stored certificates are re-verified.
 
-Outputs: results/e13_tie.md, results/e13_performance.md, figures/e13_double_peaked.{png,pdf}
+Outputs: results/e13_tie.md, results/e13_performance.md, results/e13_lower_bounds.md,
+results/e13_certificates/*.json, figures/e13_double_peaked.{png,pdf}
 """
 
 from __future__ import annotations
+import argparse
+import glob
+import json
 import os
 import time
 
@@ -21,6 +27,7 @@ import matplotlib.pyplot as plt
 from common import INK, INK_2, MUTED, SERIES, MARKERS, RES_DIR, apply_style, save, theory_line, write_markdown_table
 from src.double_peaked import (M1, M2, Mechanism, PredMed, PredMinMax, Window, candidate_points, check_tie,
                                expected_objective, objective, optimum)
+from src.double_peaked_lp import DPLowerBound, verify_dp_certificate
 
 B, C = 1.0, 1.0
 GRID = np.arange(-3, 3.001, 0.25)
@@ -159,11 +166,48 @@ def part_c():
     return save(fig, "e13_double_peaked")
 
 
-def main():
+CERT_DIR = os.path.join(RES_DIR, "e13_certificates")
+# name, agents, grid half-width K, grid step h, quick?
+LB_CONFIGS = [("sc_n3_coarse", 3, 4, "1/2", True), ("sc_n3_fine", 3, 8, "1/4", False)]
+
+
+def part_d(full: bool = False):
+    os.makedirs(CERT_DIR, exist_ok=True)
+    for name, n, K, h, quick in LB_CONFIGS:
+        path = os.path.join(CERT_DIR, f"{name}.json")
+        if quick or full or not os.path.exists(path):
+            lp = DPLowerBound(n, K, h=h, b="1", c="1", objective="sc")
+            lp.solve()
+            cert = lp.certificate()
+            cert["name"] = name
+            with open(path, "w") as fh:
+                json.dump(cert, fh, indent=0)
+    rows = []
+    for path in sorted(glob.glob(os.path.join(CERT_DIR, "*.json"))):
+        cert = json.load(open(path))
+        bound = verify_dp_certificate(cert)
+        ok = f"{bound.numerator}/{bound.denominator}" == cert["bound"]
+        rows.append({"agents": cert["n"], "grid": f"[-{float(cert['K']) * float(eval(cert['h'])):g}, "
+                                                   f"{float(cert['K']) * float(eval(cert['h'])):g}], step {cert['h']}",
+                     "LP value": f"{cert['lp_value']:.6f}", "certified bound": f"{int(bound * 10000) / 10000:.4f}",
+                     "exact": cert["bound"] if len(cert["bound"]) < 16 else "(long fraction)",
+                     "multipliers": f"{len(cert['tie'])} + {len(cert['ratio'])}", "verified": "yes" if ok else "NO",
+                     "certificate": os.path.basename(path)})
+        print(f"  D {os.path.basename(path)}: bound >= {float(bound):.6f} (exact match: {ok})")
+    write_markdown_table(rows, list(rows[0]), os.path.join(RES_DIR, "e13_lower_bounds.md"),
+                         header="E13D - Social cost, double-peaked preferences with b = c = 1, no prediction: lower bounds "
+                                "on the ratio of every truthful-in-expectation mechanism (Proposition 23), re-verified in exact "
+                                "arithmetic from the stored certificates.")
+
+
+def main(full: bool = False):
     part_a()
     part_b()
     print("  figure:", part_c())
+    part_d(full)
 
 
 if __name__ == "__main__":
-    main()
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--full", action="store_true", help="re-solve the finer lower-bound LP")
+    main(ap.parse_args().full)

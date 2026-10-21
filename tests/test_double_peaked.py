@@ -70,5 +70,30 @@ class TestDoublePeaked(unittest.TestCase):
                     self.assertLessEqual(mc, max(1 + 2 * b / c, 2) + 1e-9)
 
 
+class TestDoublePeakedLowerBound(unittest.TestCase):
+
+    def test_small_certificate_gives_85_over_82(self):
+        from fractions import Fraction
+        from src.double_peaked_lp import DPLowerBound, verify_dp_certificate
+        lp = DPLowerBound(3, 4, h="1/2", objective="sc")
+        lp.solve()
+        cert = lp.certificate()
+        self.assertEqual(verify_dp_certificate(cert), Fraction(85, 82))
+        weaker = dict(cert, tie=cert["tie"][1:])
+        self.assertLess(verify_dp_certificate(weaker), Fraction(85, 82))
+
+    def test_stored_certificates_verify(self):
+        import glob, json, os
+        from src.double_peaked_lp import verify_dp_certificate
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        paths = glob.glob(os.path.join(root, "results", "e13_certificates", "*.json"))
+        self.assertTrue(paths)
+        for path in paths:
+            cert = json.load(open(path))
+            bound = verify_dp_certificate(cert)
+            self.assertEqual(f"{bound.numerator}/{bound.denominator}", cert["bound"], path)
+            self.assertGreater(bound, 1)
+
+
 if __name__ == "__main__":
     unittest.main()

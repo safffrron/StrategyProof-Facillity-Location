@@ -3,7 +3,7 @@
 **CS 6001 Course Project — Department of Computer Science & Engineering, IIT Bombay**
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-82%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-84%20passed-brightgreen.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -40,7 +40,7 @@ Headline findings (statements, proofs and novelty labels in [`docs/RESULTS.md`](
 - **Asymmetric costs:** snapping fails, but rules on agents' favourite feasible points are strategyproof for every single-peaked cost, with tight bounds $2+\alpha$ and $2+1/\alpha$.
 - **Calibrated intervals from data:** conformal intervals plus strategyproof interval mechanisms give per-day certificates and much better worst days. A good point prediction still wins on average.
 - **Randomisation without predictions cannot reach 2.** With candidate locations, every truthful-in-expectation mechanism has max-cost ratio at least 2.279, so Tang et al.'s (2020) lower bound of 2 is not tight. The proof is computer-assisted: LP certificates checked in exact rational arithmetic (`results/e12_certificates/`).
-- **Two peaks per agent.** With double-peaked preferences (Filos-Ratsikas et al. 2017) the literal MinMaxP analogue is manipulable. A randomised *window* rule is truthful in expectation: it trusts the prediction within b of a median and otherwise flips between the median's two peaks. It is 1-consistent and (1 + b/c)-robust for social cost, and for max cost it is optimal among 1-consistent mechanisms when b ≤ c/2.
+- **Two peaks per agent.** With double-peaked preferences (Filos-Ratsikas et al. 2017) the literal MinMaxP analogue is manipulable. A randomised *window* rule is truthful in expectation: it trusts the prediction within b of a median and otherwise flips between the median's two peaks. It is 1-consistent and (1 + b/c)-robust for social cost, and for max cost it is optimal among 1-consistent mechanisms when b ≤ c/2. Without predictions, a certified 1.0438 is the first lower bound above 1 for randomised mechanisms and social cost.
 - **Negative results:** the course brief's "prediction if inside, else median", "nearest feasible point to the prediction", "snap toward the prediction", and blocked-zone versions of LRM are all manipulable.
 
 ---
@@ -149,7 +149,7 @@ Regenerate every table and figure (≈10 minutes; `python3 experiments/e12_candi
 python3 experiments/run_all.py
 ```
 
-Key figures: `figures/e11_randomization.png`, `figures/e3_interval_width.png`, `figures/e10_conformal.png`, `figures/e9_asymmetric.png`, `figures/e5_confidence_frontier.png`, `figures/e2_error_doubling.png`. Key tables: `results/sp_table.md`, `results/bounds_table.md`, `results/e8_lower_bounds.md`, `results/e9_asymmetric.md`, `results/e10_conformal.md`, `results/e12_candidate_lb.md`, `results/e13_tie.md`, `results/e13_performance.md`. Reading path for newcomers: [`docs/READING_LIST.md`](docs/READING_LIST.md).
+Key figures: `figures/e11_randomization.png`, `figures/e3_interval_width.png`, `figures/e10_conformal.png`, `figures/e9_asymmetric.png`, `figures/e5_confidence_frontier.png`, `figures/e2_error_doubling.png`. Key tables: `results/sp_table.md`, `results/bounds_table.md`, `results/e8_lower_bounds.md`, `results/e9_asymmetric.md`, `results/e10_conformal.md`, `results/e12_candidate_lb.md`, `results/e13_tie.md`, `results/e13_performance.md`, `results/e13_lower_bounds.md`. Reading path for newcomers: [`docs/READING_LIST.md`](docs/READING_LIST.md).
 
 ---
 
@@ -164,7 +164,7 @@ pip install -r requirements.txt
 ```
 
 ### 2. Running Unit Tests
-Execute the full test suite (82 passing tests):
+Execute the full test suite (84 passing tests):
 ```bash
 python3 -m pytest -v tests/
 ```
