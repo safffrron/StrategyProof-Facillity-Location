@@ -101,7 +101,7 @@ def _interior_point_primal(c, A_ub, A_eq, col_upper, disp: bool, crossover: bool
     sol = h.getSolution()
     x = np.asarray(sol.col_value)
     if not crossover:
-        return x
+        return x, -np.asarray(sol.row_dual[:n_ub])
     status = h.getModelStatus()
     return type("IpmResult", (), {"fun": float(np.dot(c, x)), "x": x,
                                   "status": 0 if status == highspy.HighsModelStatus.kOptimal else 1,
@@ -242,12 +242,13 @@ class CandidateLP:
 
     def solve(self, reach: int = 2, generate: bool = True, tol: float = 1e-9, per_profile: int = 2,
               max_iter: int = 100, verbose: bool = False, method: str = "highs", disp: bool = False,
-              polish_tol: float = 1e-6) -> float:
+              polish_tol: float = 1e-6, polish_dual: float = 0.0) -> float:
         """Optimal LP value. With ``generate=False`` only local misreports (and misreports to the candidates and
         the grid ends) are imposed: a further relaxation, so its value and certificate are still valid lower
         bounds, and on large grids it is much faster. ``method="highs-ipm"`` (interior point) is usually faster on
         large grids; ``"ipm-polish"`` (needs the ``highspy`` package) runs the interior point method without its slow
-        crossover, then solves the dual of the LP restricted to the tight misreport rows by simplex; ``disp=True`` prints the solver's log."""
+        crossover, then solves the dual of the LP restricted to the tight misreport rows by simplex (with
+        ``polish_dual > 0``, only rows whose interior-point dual exceeds that fraction of the largest are kept); ``disp=True`` prints the solver's log."""
         special = [self.G.index(c) for c in self.C if c in self.G] + [0, self.m - 1]
         rows = set()
         for b in range(self.m):
@@ -262,9 +263,11 @@ class CandidateLP:
             # is still a valid lower bound; with every tight row kept it equals the full optimum.
             self.rows = sorted(rows)
             c, A_ub, A_eq = self._matrices()
-            x = _interior_point_primal(c, A_ub, A_eq, [1.0] * (self.nv - 1) + [100.0], disp)
+            x, y = _interior_point_primal(c, A_ub, A_eq, [1.0] * (self.nv - 1) + [100.0], disp)
             slack = -(A_ub[:len(self.rows)] @ x)
-            keep = [row for row, sl in zip(self.rows, slack) if sl <= polish_tol]
+            y = y[:len(self.rows)]
+            weight = y > polish_dual * max(float(y.max()), 1e-300) if polish_dual > 0 else np.ones(len(y), bool)
+            keep = [row for row, sl, ok in zip(self.rows, slack, weight) if sl <= polish_tol and ok]
             if verbose:
                 print(f"    interior point: LP {x[-1]:.6f}, {len(keep)} of {len(self.rows)} misreport rows tight, "
                       f"{time.time() - t0:.0f}s", flush=True)

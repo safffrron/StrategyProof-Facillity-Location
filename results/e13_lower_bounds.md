@@ -2,7 +2,7 @@ E13D - Double-peaked preferences with b = c = 1, no prediction: lower bounds on 
 
 | objective | agents | grid | LP value | certified bound | exact | multipliers | verified | certificate |
 |---|---|---|---|---|---|---|---|---|
-| max cost | 2 | [-24, 24], step 1 | 1.518684 | 1.5186 | (long fraction) | 485 + 141 | yes | mc_n2_wide.json |
+| max cost | 2 | [-32, 32], step 1 | 1.526712 | 1.5264 | (long fraction) | 1417 + 320 | yes | mc_n2_wide.json |
 | social cost | 3 | [-2, 2], step 1/2 | 1.036585 | 1.0365 | 85/82 | 6 + 5 | yes | sc_n3_coarse.json |
 | social cost | 3 | [-2, 2], step 1/4 | 1.043855 | 1.0438 | (long fraction) | 6 + 6 | yes | sc_n3_fine.json |
 | social cost | 5 | [-2, 2], step 1/2 | 1.063291 | 1.0632 | (long fraction) | 2 + 2 | yes | sc_n5.json |

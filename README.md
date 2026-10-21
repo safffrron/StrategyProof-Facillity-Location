@@ -42,7 +42,7 @@ b and c are the peak distance and minimum cost of double-peaked agents.
 | P16 | Conformal-prediction intervals turn coverage into per-day guarantees | New |
 | T17 | No prediction, candidate locations: every randomised truthful-in-expectation mechanism has max-cost ratio ≥ **2.279**, so Tang et al.'s (2020) lower bound of 2 is not attainable | New, computer-assisted |
 | P19–T22 | Double-peaked preferences: the literal MinMaxP analogue is manipulable; randomised *window* rules are truthful in expectation; PredMed is (1, 1 + b/c) for social cost and PredMinMax is (1, max{1 + 2b/c, 2}) for max cost, optimal among 1-consistent rules when b ≤ c/2 | New |
-| P23–P24 | Double-peaked preferences, no prediction: first randomised social-cost lower bound above 1 (**84/79**, by hand); max-cost bound raised from 3/2 to **1.5186** | New |
+| P23–P24 | Double-peaked preferences, no prediction: first randomised social-cost lower bound above 1 (**84/79**, by hand); max-cost bound raised from 3/2 to **1.5264** | New |
 
 ## How the claims are checked
 

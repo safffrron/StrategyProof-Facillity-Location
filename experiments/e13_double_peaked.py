@@ -8,7 +8,7 @@ median, otherwise flip a fair coin between the median's two peaks) are truthful 
 * B: worst-case consistency and robustness against the theory, for several b/c and n.
 * C: figure - (a) the max-cost trade-off and lower bounds; (b) ratio against prediction error.
 * D: certified lower bounds for TIE mechanisms without predictions: social cost, three agents (Proposition 23);
-  max cost, two agents (Proposition 24). ``--full`` re-solves the large LPs (about 15 minutes); otherwise stored
+  max cost, two agents (Proposition 24). ``--full`` re-solves the large LPs (about 70 minutes); otherwise stored
   certificates are re-verified.
 
 Outputs: results/e13_tie.md, results/e13_performance.md, results/e13_lower_bounds.md,
@@ -171,7 +171,7 @@ CERT_DIR = os.path.join(RES_DIR, "e13_certificates")
 # name, agents, grid half-width K, grid step h, objective, a-priori ratio cap U, quick?
 LB_CONFIGS = [("sc_n3_coarse", 3, 4, "1/2", "sc", "2", True), ("sc_n3_fine", 3, 8, "1/4", "sc", "2", False),
               ("sc_n5", 5, 4, "1/2", "sc", "2", False),
-              ("mc_n2_wide", 2, 24, "1", "mc", "3", False)]
+              ("mc_n2_wide", 2, 32, "1", "mc", "3", False)]
 
 
 def part_d(full: bool = False):
