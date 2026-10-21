@@ -7,8 +7,9 @@ median, otherwise flip a fair coin between the median's two peaks) are truthful 
 * A: exhaustive truthfulness checks (every profile, agent, misreport and prediction on a grid).
 * B: worst-case consistency and robustness against the theory, for several b/c and n.
 * C: figure - (a) the max-cost trade-off and lower bounds; (b) ratio against prediction error.
-* D: certified lower bounds for TIE mechanisms without predictions, social cost, three agents (Proposition 23).
-  ``--full`` re-solves the finer LP (about 5 minutes); otherwise stored certificates are re-verified.
+* D: certified lower bounds for TIE mechanisms without predictions: social cost, three agents (Proposition 23);
+  max cost, two agents (Proposition 24). ``--full`` re-solves the large LPs (about 15 minutes); otherwise stored
+  certificates are re-verified.
 
 Outputs: results/e13_tie.md, results/e13_performance.md, results/e13_lower_bounds.md,
 results/e13_certificates/*.json, figures/e13_double_peaked.{png,pdf}
@@ -167,18 +168,19 @@ def part_c():
 
 
 CERT_DIR = os.path.join(RES_DIR, "e13_certificates")
-# name, agents, grid half-width K, grid step h, quick?
-LB_CONFIGS = [("sc_n3_coarse", 3, 4, "1/2", True), ("sc_n3_fine", 3, 8, "1/4", False)]
+# name, agents, grid half-width K, grid step h, objective, a-priori ratio cap U, quick?
+LB_CONFIGS = [("sc_n3_coarse", 3, 4, "1/2", "sc", "2", True), ("sc_n3_fine", 3, 8, "1/4", "sc", "2", False),
+              ("mc_n2_wide", 2, 24, "1", "mc", "3", False)]
 
 
 def part_d(full: bool = False):
     os.makedirs(CERT_DIR, exist_ok=True)
-    for name, n, K, h, quick in LB_CONFIGS:
+    for name, n, K, h, kind, U, quick in LB_CONFIGS:
         path = os.path.join(CERT_DIR, f"{name}.json")
         if quick or full or not os.path.exists(path):
-            lp = DPLowerBound(n, K, h=h, b="1", c="1", objective="sc")
+            lp = DPLowerBound(n, K, h=h, b="1", c="1", objective=kind)
             lp.solve()
-            cert = lp.certificate()
+            cert = lp.certificate(U=U)
             cert["name"] = name
             with open(path, "w") as fh:
                 json.dump(cert, fh, indent=0)
@@ -187,7 +189,7 @@ def part_d(full: bool = False):
         cert = json.load(open(path))
         bound = verify_dp_certificate(cert)
         ok = f"{bound.numerator}/{bound.denominator}" == cert["bound"]
-        rows.append({"agents": cert["n"], "grid": f"[-{float(cert['K']) * float(eval(cert['h'])):g}, "
+        rows.append({"objective": {"sc": "social cost", "mc": "max cost"}[cert["objective"]], "agents": cert["n"], "grid": f"[-{float(cert['K']) * float(eval(cert['h'])):g}, "
                                                    f"{float(cert['K']) * float(eval(cert['h'])):g}], step {cert['h']}",
                      "LP value": f"{cert['lp_value']:.6f}", "certified bound": f"{int(bound * 10000) / 10000:.4f}",
                      "exact": cert["bound"] if len(cert["bound"]) < 16 else "(long fraction)",
@@ -195,9 +197,10 @@ def part_d(full: bool = False):
                      "certificate": os.path.basename(path)})
         print(f"  D {os.path.basename(path)}: bound >= {float(bound):.6f} (exact match: {ok})")
     write_markdown_table(rows, list(rows[0]), os.path.join(RES_DIR, "e13_lower_bounds.md"),
-                         header="E13D - Social cost, double-peaked preferences with b = c = 1, no prediction: lower bounds "
-                                "on the ratio of every truthful-in-expectation mechanism (Proposition 23), re-verified in exact "
-                                "arithmetic from the stored certificates.")
+                         header="E13D - Double-peaked preferences with b = c = 1, no prediction: lower bounds on the ratio of "
+                                "every truthful-in-expectation mechanism (Propositions 23-24; Filos-Ratsikas et al. prove 3/2 "
+                                "for max cost and nothing for social cost), re-verified in exact arithmetic from the stored "
+                                "certificates.")
 
 
 def main(full: bool = False):
