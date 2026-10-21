@@ -43,35 +43,35 @@ def rows():
     add("open line", "MinMaxP", "max", "robustness", 3, 2.0, "Agrawal et al. 2022", found(MinMaxP(snap=False), "mc", 3, 0, "robust"))
     add("open line", "MinMaxP", "max", "error η = 0.5", 3, 1.5, "Agrawal; Chan-Lin-Wang", found(MinMaxP(snap=False), "mc", 3, 0, "error", eta=0.5))
     # --- our results, point predictions with blocked zones
-    add("blocked", "MinMaxP*", "max", "consistency", 5, 1.0, "Thm 2", found(MinMaxP(), "mc", 5, 2, "error"))
-    add("blocked", "MinMaxP*", "max", "robustness", 3, 3.0, "Thm 2 (optimal: Walsh LB)", found(MinMaxP(), "mc", 3, 2, "robust"))
+    add("blocked", "MinMaxP*", "max", "consistency", 5, 1.0, "Thm 4", found(MinMaxP(), "mc", 5, 2, "error"))
+    add("blocked", "MinMaxP*", "max", "robustness", 3, 3.0, "Thm 4 (optimal: Walsh LB)", found(MinMaxP(), "mc", 3, 2, "robust"))
     for eta in (0.25, 0.5, 0.75):
-        add("blocked", "MinMaxP*", "max", f"error η = {eta}", 3, min(1 + 2 * eta, 3), "Thm 2 (tight)",
+        add("blocked", "MinMaxP*", "max", f"error η = {eta}", 3, min(1 + 2 * eta, 3), "Thm 4 (tight)",
             found(MinMaxP(), "mc", 3, 2, "error", eta=eta))
     add("blocked", "MinMaxP+SnapTowardPred", "max", "error η = 0.25", 3, "not SP", "E1",
         found(SnapTowardPrediction(), "mc", 3, 2, "error", eta=0.25))
-    add("blocked", "MinMaxP*", "social", "consistency", 7, 1.0, "Prop 5", found(MinMaxP(), "sc", 7, 2, "error"))
+    add("blocked", "MinMaxP*", "social", "consistency", 7, 1.0, "Prop 8(a)", found(MinMaxP(), "sc", 7, 2, "error"))
     for n in (3, 5):
-        add("open line", "MinMaxP", "social", "robustness", n, n - 1, "Prop 6 (k = n-1)", found(MinMaxP(snap=False), "sc", n, 0, "robust"))
+        add("open line", "MinMaxP", "social", "robustness", n, n - 1, "Prop 8(b) (k = n-1)", found(MinMaxP(snap=False), "sc", n, 0, "robust"))
         add("blocked", "MinMaxP*", "social", "robustness", n, 2 * n - 1, "conjecture", found(MinMaxP(), "sc", n, 2, "robust"))
     # --- confidence family, social cost, n = 7
     n = 7
     for k in (0, 2, 4, 6):
         add("blocked", f"PhantomMedian[k={k}]*", "social", "consistency", n, (3 * n - 1 - k) / (n + 1 + k), "conjecture",
             found(PhantomMedian(k), "sc", n, 2, "error"))
-        add("open line", f"PhantomMedian[k={k}]", "social", "robustness", n, max(1.0, (n + k - 1) / (n - k + 1)), "Prop 6",
+        add("open line", f"PhantomMedian[k={k}]", "social", "robustness", n, max(1.0, (n + k - 1) / (n - k + 1)), "Prop 8(b)",
             found(PhantomMedian(k, snap=False), "sc", n, 0, "robust"))
         add("blocked", f"PhantomMedian[k={k}]*", "social", "robustness", n, 1 + 2 * (n + k - 1) / (n - k + 1),
             "conjecture", found(PhantomMedian(k), "sc", n, 2, "robust"))
     # --- interval predictions (optimum inside the interval)
     for om in (0.5, 1.0):
-        add("open line", "CenterMinMaxP", "max", f"consistency ω = {om}", 3, 1 + min(om / 2, 1), "Thm 3 (optimal in GM class)",
+        add("open line", "CenterMinMaxP", "max", f"consistency ω = {om}", 3, 1 + min(om / 2, 1), "Thm 6 (optimal in GM class)",
             found(CenterMinMaxP(snap=False), "mc", 3, 0, "interval", omega=om))
-        add("open line", "IntervalClamp", "max", f"consistency ω = {om}", 3, 1 + min(om, 1), "Thm 3",
+        add("open line", "IntervalClamp", "max", f"consistency ω = {om}", 3, 1 + min(om, 1), "Thm 6",
             found(IntervalClamp(snap=False), "mc", 3, 0, "interval", omega=om))
-        add("blocked", "CenterMinMaxP*", "max", f"consistency ω = {om}", 3, min(1 + om, 3), "Thm 4",
+        add("blocked", "CenterMinMaxP*", "max", f"consistency ω = {om}", 3, min(1 + om, 3), "Thm 7",
             found(CenterMinMaxP(), "mc", 3, 2, "interval", omega=om))
-        add("blocked", "IntervalClamp*", "max", f"consistency ω = {om}", 3, min(1 + 2 * om, 3), "Thm 4",
+        add("blocked", "IntervalClamp*", "max", f"consistency ω = {om}", 3, min(1 + 2 * om, 3), "Thm 7",
             found(IntervalClamp(), "mc", 3, 2, "interval", omega=om))
     # robustness: interval far from the optimum (normalised distance 5)
     add("blocked", "CenterMinMaxP*", "max", "robustness (η = 5)", 3, 3.0, "Lemma 3",

@@ -1,4 +1,4 @@
-"""E7 - Diagram of the tight instance behind Theorem 2 (why blocked zones double the error).
+"""E7 - Diagram of the tight instance behind Theorem 4 (why blocked zones double the error).
 
 Agents at 0 and 2, a blocked zone (1, 1 + 2*eta - eps), prediction 1 + eta (error eta: the
 optimum is 1, with optimal max cost 1). MinMaxP keeps the prediction (cost 1 + eta); the right end
@@ -48,7 +48,7 @@ def main() -> None:
                                  color=SERIES[1], linewidth=1.2))
     ax.text((p + f) / 2, -0.63, "snap to the nearest allowed point\n(the right end is ε closer)", ha="center",
             va="top", fontsize=7.5, color=INK_2)
-    ax.text(lo + 0.02, 0.98, f"Tight instance for Theorem 2 (η = {ETA}): snapping reflects the prediction's error "
+    ax.text(lo + 0.02, 0.98, f"Tight instance for Theorem 4 (η = {ETA}): snapping reflects the prediction's error "
                              "across the blocked zone, doubling it", fontsize=8.5, color=INK, va="top")
     print("E7 saved", save(fig, "e7_doubling_diagram"))
 

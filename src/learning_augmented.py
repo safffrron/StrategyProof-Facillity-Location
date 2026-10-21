@@ -433,7 +433,7 @@ class CenterMinMaxP(BatchMechanism):
     """Collapse the interval prediction [lo, hi] to its centre and run MinMaxP.
 
     For the max-cost objective this is optimal among generalised medians: interval-consistency
-    1 + min(omega/2, 1) at normalised width omega (``docs/RESULTS.md``, Theorem 3).
+    1 + min(omega/2, 1) at normalised width omega (``docs/RESULTS.md``, Theorem 6).
     """
     base_name = "CenterMinMaxP"
     prediction_type = "interval"

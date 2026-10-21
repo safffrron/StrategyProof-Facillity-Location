@@ -2,7 +2,7 @@
 
 (a) Worst case: adversarial search for MinMaxP on the open line and MinMaxP* with blocked zones,
     compared with the bounds 1 + min(eta, 1) (Agrawal et al.; Chan, Lin & Wang) and
-    min(1 + 2 eta, 3) (Theorem 2 in docs/RESULTS.md).
+    min(1 + 2 eta, 3) (Theorem 4 in docs/RESULTS.md).
 (b) Typical case: mean ratio on random instances (uniform agents, random blocked zones generated
     with Environment1D.random_blocked) for several blocked densities.
 
