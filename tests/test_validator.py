@@ -74,3 +74,16 @@ def test_validator_check_single_profile():
     assert res.is_strategyproof
     assert len(res.violations) == 0
     assert res.max_gain == pytest.approx(0.0)
+
+
+def test_validator_confirms_projected_median_is_strategyproof_with_blocked_zones():
+    # The proposal conjectured that snapping the median to the nearest feasible point is
+    # manipulable; exhaustive checking with this validator shows it is not (fixed tie-break).
+    env = Environment1D(length=1.0, num_grid_points=11, blocked_intervals=[Interval(0.3, 0.7)])
+    validator = StrategyproofnessValidator(env=env, epsilon=1e-9)
+    for tie_break in ("left", "right"):
+        res = validator.verify_exhaustive_grid(
+            mechanism=NaiveProjectedMedianMechanism(tie_break=tie_break), n_agents=3, grid_coarseness=11
+        )
+        assert res.is_strategyproof
+        assert res.num_violations_found == 0

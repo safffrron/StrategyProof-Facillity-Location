@@ -208,8 +208,10 @@ class NaiveProjectedMedianMechanism(FacilityLocationMechanism):
     """Naive Projected Median Mechanism.
 
     Computes the unconstrained median, then snaps to the nearest point in the feasible set F.
-    As highlighted in the project proposal, this naive snapping introduces discontinuities
-    at obstacle boundaries that agents can exploit to manipulate the facility location.
+    The project proposal conjectured that the discontinuities introduced by snapping would be
+    exploitable. They are not: with a fixed tie-break and symmetric distance costs, snapping any
+    generalised median keeps it strategyproof (Walsh 2021; see docs/RESULTS.md, Lemma 1, and
+    tests/test_validator.py). Snapping does break strategyproofness for asymmetric costs.
     """
 
     def __init__(self, tie_break: str = "left") -> None:
