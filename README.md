@@ -3,7 +3,7 @@
 **CS 6001 Course Project — Department of Computer Science & Engineering, IIT Bombay**
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-23%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-54%20passed-brightgreen.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -26,9 +26,14 @@ In real-world urban and infrastructure planning (such as placing a transit hub, 
    $$F = \bigcup_{k=1}^m [a_k, b_k]$$
 2. **Interval Predictions**: Machine learning models output confidence intervals $[\hat{p}_{\text{low}}, \hat{p}_{\text{high}}]$ reflecting epistemic uncertainty rather than point estimates.
 
-Existing learning-augmented fallback mechanisms (Agrawal et al. 2022/2024) rely on projecting predictions onto bounding intervals. However, when inaccessible zones are introduced, naive snapping to the nearest feasible location introduces discontinuities that strategic agents can exploit, compromising strategyproofness (truthfulness).
+Existing learning-augmented mechanisms (Agrawal et al. 2022/2024) project predictions onto bounding intervals. Our proposal conjectured that snapping such outputs to the nearest feasible location would create exploitable discontinuities. **It does not**: snapping any generalised median with a fixed tie-break stays strategyproof (Walsh 2021; verified exhaustively here). What breaks are other natural adaptations, and asymmetric costs.
 
-This project investigates and develops learning-augmented mechanisms that maintain strict strategyproofness under both interval predictions and blocked zones, analyzing the resulting consistency-robustness Pareto tradeoffs.
+This project develops learning-augmented mechanisms that stay strategyproof under both interval predictions and blocked zones, and characterises their consistency–robustness trade-offs. Headline findings (details and proofs in [`docs/RESULTS.md`](docs/RESULTS.md)):
+
+- **Blocked zones double the price of a wrong prediction.** MinMaxP with snapping achieves exactly $\min(1+2\eta, 3)$ for max cost, against $1+\min(\eta,1)$ on the open line. It is tight, and 3 is optimal.
+- **An interval prediction is worth exactly its midpoint** for max cost. Collapsing it to the centre achieves $1+\min(\omega/2, 1)$, which is optimal among generalised medians. Clamping the median into the interval is the safe choice for social cost.
+- **The confidence trade-off for social cost with blocked zones** follows a conjectured closed form, $(3-c)/(1+c)$ consistency versus $(3+c)/(1-c)$ robustness. This is a 1-D counterpart of Agrawal et al.'s 2-D frontier. For max cost, trust is all-or-nothing.
+- **Negative results:** the course brief's "prediction if inside, else median" rule, the "nearest feasible point to the prediction" rule, "snap toward the prediction", and every snapped rule under asymmetric costs are all manipulable. The exhaustive checker finds explicit counterexamples.
 
 ---
 
@@ -37,9 +42,9 @@ This project investigates and develops learning-augmented mechanisms that mainta
 | Phase | Milestone Description | Status |
 | :--- | :--- | :---: |
 | **Week 1–2** | **Discretized Environment, Baseline Median Mechanism, and Computational Strategyproofness Validator** | **Completed** |
-| **Week 3–4** | Standard Agrawal Single-Point Mechanism & Adaptation to Interval Predictions with Blocked Zones | Upcoming |
-| **Week 5** | Large-Scale Simulations: Consistency-Robustness Curves Across Error & Blocked Density | Planned |
-| **Week 6–7** | Adversarial Search for Worst-Case Bounds, Empirical Validation, and Final Report | Planned |
+| **Week 3–4** | Standard Agrawal Single-Point Mechanism & Adaptation to Interval Predictions with Blocked Zones | **Completed** |
+| **Week 5** | Large-Scale Simulations: Consistency-Robustness Curves Across Error & Blocked Density | **Completed** |
+| **Week 6–7** | Adversarial Search for Worst-Case Bounds, Empirical Validation, and Final Report | Search & validation **completed**; report in progress |
 
 ---
 
@@ -119,6 +124,25 @@ $$\forall i \in \{1, \dots, n\}, \; \forall x'_i \in G: \quad |f(x_i, x_{-i}) - 
 
 ---
 
+## 🔭 Weeks 3–5: Predictions, Blocked Zones and Worst Cases
+
+| Component | What it does |
+| :--- | :--- |
+| `src/learning_augmented.py` | Vectorised mechanisms: Median, Leftmost, Dictator, MinMaxP, `PhantomMedian[k]` (confidence family), `CenterMinMaxP` and `IntervalClamp` (interval predictions). Each can optionally snap to the nearest feasible point. Also includes the manipulable baselines and exact constrained optima |
+| `src/fast_validator.py` | Exhaustive checker over every profile, agent, misreport and prediction (≈180× faster than `src/validator.py`); supports asymmetric costs |
+| `src/experiment_utils.py` | Predictions with controlled error and width, typical-instance sampling (reuses `Environment1D` and `generate_agents`), and a cluster-aware adversarial hill-climbing search |
+| `experiments/e1`–`e7` | Strategyproofness table, error-doubling curves, interval width, blocked density and distributions, confidence frontier, bounds-versus-search table, and the tight-instance diagram |
+| `docs/RESULTS.md` | Theorems, proofs, conjectures and how each figure supports them |
+
+Regenerate every table and figure (≈2 minutes):
+```bash
+python3 experiments/run_all.py
+```
+
+Key figures: `figures/e2_error_doubling.png`, `figures/e3_interval_width.png`, `figures/e5_confidence_frontier.png`, `figures/e4_blocked_density.png`, `figures/e7_doubling_diagram.png`. Key tables: `results/sp_table.md`, `results/bounds_table.md`, `results/e4_distributions.md`.
+
+---
+
 ## 🚀 Getting Started
 
 ### 1. Installation
@@ -130,7 +154,7 @@ pip install -r requirements.txt
 ```
 
 ### 2. Running Unit Tests
-Execute the full test suite (23 passing tests):
+Execute the full test suite (54 passing tests):
 ```bash
 python3 -m pytest -v tests/
 ```

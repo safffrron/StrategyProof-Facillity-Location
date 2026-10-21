@@ -1,0 +1,135 @@
+mechanism,setting,n,grid,predictions,profiles,deviations_checked,cost_alpha,strategyproof,violating_fraction,max_gain,counterexample,family,expected_sp
+Median,unconstrained,3,21,1,1771,122199,1.0,True,0.0,0.0,,baseline,True
+Median,1 zone,3,21,1,1771,122199,1.0,True,0.0,0.0,,baseline,True
+Median,2 zones,3,21,1,1771,122199,1.0,True,0.0,0.0,,baseline,True
+Median,unconstrained,4,15,1,3060,208080,1.0,True,0.0,0.0,,baseline,True
+Median,1 zone,4,15,1,3060,208080,1.0,True,0.0,0.0,,baseline,True
+Median,2 zones,4,15,1,3060,208080,1.0,True,0.0,0.0,,baseline,True
+Median,unconstrained,5,11,1,3003,195195,1.0,True,0.0,0.0,,baseline,True
+Median,1 zone,5,11,1,3003,195195,1.0,True,0.0,0.0,,baseline,True
+Median,2 zones,5,11,1,3003,195195,1.0,True,0.0,0.0,,baseline,True
+Median*,unconstrained,3,21,1,1771,122199,1.0,True,0.0,0.0,,baseline,True
+Median*,1 zone,3,21,1,1771,122199,1.0,True,0.0,0.0,,baseline,True
+Median*,2 zones,3,21,1,1771,122199,1.0,True,0.0,0.0,,baseline,True
+Median*,unconstrained,4,15,1,3060,208080,1.0,True,0.0,0.0,,baseline,True
+Median*,1 zone,4,15,1,3060,208080,1.0,True,0.0,0.0,,baseline,True
+Median*,2 zones,4,15,1,3060,208080,1.0,True,0.0,0.0,,baseline,True
+Median*,unconstrained,5,11,1,3003,195195,1.0,True,0.0,0.0,,baseline,True
+Median*,1 zone,5,11,1,3003,195195,1.0,True,0.0,0.0,,baseline,True
+Median*,2 zones,5,11,1,3003,195195,1.0,True,0.0,0.0,,baseline,True
+Leftmost*,unconstrained,3,21,1,1771,122199,1.0,True,0.0,0.0,,baseline,True
+Leftmost*,1 zone,3,21,1,1771,122199,1.0,True,0.0,0.0,,baseline,True
+Leftmost*,2 zones,3,21,1,1771,122199,1.0,True,0.0,0.0,,baseline,True
+Leftmost*,unconstrained,4,15,1,3060,208080,1.0,True,0.0,0.0,,baseline,True
+Leftmost*,1 zone,4,15,1,3060,208080,1.0,True,0.0,0.0,,baseline,True
+Leftmost*,2 zones,4,15,1,3060,208080,1.0,True,0.0,0.0,,baseline,True
+Leftmost*,unconstrained,5,11,1,3003,195195,1.0,True,0.0,0.0,,baseline,True
+Leftmost*,1 zone,5,11,1,3003,195195,1.0,True,0.0,0.0,,baseline,True
+Leftmost*,2 zones,5,11,1,3003,195195,1.0,True,0.0,0.0,,baseline,True
+Dictator[0]*,unconstrained,3,21,1,9261,639009,1.0,True,0.0,0.0,,baseline,True
+Dictator[0]*,1 zone,3,21,1,9261,639009,1.0,True,0.0,0.0,,baseline,True
+Dictator[0]*,2 zones,3,21,1,9261,639009,1.0,True,0.0,0.0,,baseline,True
+Dictator[0]*,unconstrained,4,15,1,50625,3442500,1.0,True,0.0,0.0,,baseline,True
+Dictator[0]*,1 zone,4,15,1,50625,3442500,1.0,True,0.0,0.0,,baseline,True
+Dictator[0]*,2 zones,4,15,1,50625,3442500,1.0,True,0.0,0.0,,baseline,True
+Dictator[0]*,unconstrained,5,11,1,161051,10468315,1.0,True,0.0,0.0,,baseline,True
+Dictator[0]*,1 zone,5,11,1,161051,10468315,1.0,True,0.0,0.0,,baseline,True
+Dictator[0]*,2 zones,5,11,1,161051,10468315,1.0,True,0.0,0.0,,baseline,True
+Mean*,unconstrained,3,21,1,1771,122199,1.0,False,0.988142,0.333333,"peaks=(0.5, 1, 1): agent at 0.5 reports -0.5; facility 0.833 -> 0.5, cost 0.333 -> 0",baseline,False
+Mean*,1 zone,3,21,1,1771,122199,1.0,False,0.949746,0.466667,"peaks=(0.3, 1, 1): agent at 0.3 reports -0.5; facility 0.767 -> 0.3, cost 0.467 -> 5.55e-17",baseline,False
+Mean*,2 zones,3,21,1,1771,122199,1.0,False,0.970638,0.4,"peaks=(0, 0.2, 0.55): agent at 0.55 reports 1.5; facility 0.15 -> 0.55, cost 0.4 -> 0",baseline,False
+Mean*,unconstrained,4,15,1,3060,208080,1.0,False,0.995098,0.267857,"peaks=(0.571, 0.786, 1, 1): agent at 0.571 reports -0.5; facility 0.839 -> 0.571, cost 0.268 -> 0",baseline,False
+Mean*,1 zone,4,15,1,3060,208080,1.0,False,0.980719,0.4,"peaks=(0.0714, 0.0714, 0.929, 1): agent at 0.0714 reports 0; facility 0.7 -> 0.3, cost 0.629 -> 0.229",baseline,False
+Mean*,2 zones,4,15,1,3060,208080,1.0,False,0.99281,0.353571,"peaks=(0.429, 0.429, 0.857, 1): agent at 0.429 reports -0.5; facility 0.8 -> 0.446, cost 0.371 -> 0.0179",baseline,False
+Mean*,unconstrained,5,11,1,3003,195195,1.0,False,0.996337,0.24,"peaks=(0, 0, 0, 0, 0.3): agent at 0.3 reports 1.5; facility 0.06 -> 0.3, cost 0.24 -> 5.55e-17",baseline,False
+Mean*,1 zone,5,11,1,3003,195195,1.0,False,0.981352,0.4,"peaks=(0.1, 0.1, 0.4, 1, 1): agent at 0.1 reports 0; facility 0.7 -> 0.3, cost 0.6 -> 0.2",baseline,False
+Mean*,2 zones,5,11,1,3003,195195,1.0,False,0.995005,0.31,"peaks=(0.5, 0.8, 1, 1, 1): agent at 0.5 reports -0.5; facility 0.86 -> 0.55, cost 0.36 -> 0.05",baseline,False
+Midpoint*,unconstrained,3,21,1,1771,122199,1.0,False,0.988142,0.375,"peaks=(0.25, 0.25, 1): agent at 0.25 reports -0.5; facility 0.625 -> 0.25, cost 0.375 -> 0",baseline,False
+Midpoint*,1 zone,3,21,1,1771,122199,1.0,False,0.954263,0.525,"peaks=(0.15, 0.85, 0.85): agent at 0.85 reports 1.5; facility 0.3 -> 0.825, cost 0.55 -> 0.025",baseline,False
+Midpoint*,2 zones,3,21,1,1771,122199,1.0,False,0.972332,0.4,"peaks=(0.1, 0.1, 1): agent at 0.1 reports -0.5; facility 0.55 -> 0.15, cost 0.45 -> 0.05",baseline,False
+Midpoint*,unconstrained,4,15,1,3060,208080,1.0,False,0.995098,0.357143,"peaks=(0, 0.786, 0.786, 0.786): agent at 0.786 reports 1.5; facility 0.393 -> 0.75, cost 0.393 -> 0.0357",baseline,False
+Midpoint*,1 zone,4,15,1,3060,208080,1.0,False,0.987255,0.521429,"peaks=(0.143, 0.857, 0.857, 0.857): agent at 0.857 reports 1.5; facility 0.3 -> 0.821, cost 0.557 -> 0.0357",baseline,False
+Midpoint*,2 zones,4,15,1,3060,208080,1.0,False,0.993137,0.4,"peaks=(0.143, 0.143, 0.143, 1): agent at 0.143 reports -0.5; facility 0.55 -> 0.15, cost 0.407 -> 0.00714",baseline,False
+Midpoint*,unconstrained,5,11,1,3003,195195,1.0,False,0.996337,0.35,"peaks=(0.2, 0.2, 0.2, 0.2, 0.9): agent at 0.2 reports -0.5; facility 0.55 -> 0.2, cost 0.35 -> 0",baseline,False
+Midpoint*,1 zone,5,11,1,3003,195195,1.0,False,0.984349,0.5,"peaks=(0.1, 0.9, 0.9, 0.9, 0.9): agent at 0.9 reports 1.5; facility 0.3 -> 0.8, cost 0.6 -> 0.1",baseline,False
+Midpoint*,2 zones,5,11,1,3003,195195,1.0,False,0.995005,0.4,"peaks=(0.1, 0.1, 0.1, 0.1, 1): agent at 0.1 reports -0.5; facility 0.55 -> 0.15, cost 0.45 -> 0.05",baseline,False
+MinMaxP*,unconstrained,3,21,15,1771,1832985,1.0,True,0.0,0.0,,point prediction,True
+MinMaxP*,1 zone,3,21,15,1771,1832985,1.0,True,0.0,0.0,,point prediction,True
+MinMaxP*,2 zones,3,21,15,1771,1832985,1.0,True,0.0,0.0,,point prediction,True
+MinMaxP*,unconstrained,4,15,15,3060,3121200,1.0,True,0.0,0.0,,point prediction,True
+MinMaxP*,1 zone,4,15,15,3060,3121200,1.0,True,0.0,0.0,,point prediction,True
+MinMaxP*,2 zones,4,15,15,3060,3121200,1.0,True,0.0,0.0,,point prediction,True
+MinMaxP*,unconstrained,5,11,15,3003,2927925,1.0,True,0.0,0.0,,point prediction,True
+MinMaxP*,1 zone,5,11,15,3003,2927925,1.0,True,0.0,0.0,,point prediction,True
+MinMaxP*,2 zones,5,11,15,3003,2927925,1.0,True,0.0,0.0,,point prediction,True
+PhantomMedian[k=1]*,unconstrained,3,21,15,1771,1832985,1.0,True,0.0,0.0,,point prediction,True
+PhantomMedian[k=1]*,1 zone,3,21,15,1771,1832985,1.0,True,0.0,0.0,,point prediction,True
+PhantomMedian[k=1]*,2 zones,3,21,15,1771,1832985,1.0,True,0.0,0.0,,point prediction,True
+PhantomMedian[k=1]*,unconstrained,4,15,15,3060,3121200,1.0,True,0.0,0.0,,point prediction,True
+PhantomMedian[k=1]*,1 zone,4,15,15,3060,3121200,1.0,True,0.0,0.0,,point prediction,True
+PhantomMedian[k=1]*,2 zones,4,15,15,3060,3121200,1.0,True,0.0,0.0,,point prediction,True
+PhantomMedian[k=1]*,unconstrained,5,11,15,3003,2927925,1.0,True,0.0,0.0,,point prediction,True
+PhantomMedian[k=1]*,1 zone,5,11,15,3003,2927925,1.0,True,0.0,0.0,,point prediction,True
+PhantomMedian[k=1]*,2 zones,5,11,15,3003,2927925,1.0,True,0.0,0.0,,point prediction,True
+PhantomMedian[k=2]*,unconstrained,3,21,15,1771,1832985,1.0,True,0.0,0.0,,point prediction,True
+PhantomMedian[k=2]*,1 zone,3,21,15,1771,1832985,1.0,True,0.0,0.0,,point prediction,True
+PhantomMedian[k=2]*,2 zones,3,21,15,1771,1832985,1.0,True,0.0,0.0,,point prediction,True
+PhantomMedian[k=2]*,unconstrained,4,15,15,3060,3121200,1.0,True,0.0,0.0,,point prediction,True
+PhantomMedian[k=2]*,1 zone,4,15,15,3060,3121200,1.0,True,0.0,0.0,,point prediction,True
+PhantomMedian[k=2]*,2 zones,4,15,15,3060,3121200,1.0,True,0.0,0.0,,point prediction,True
+PhantomMedian[k=2]*,unconstrained,5,11,15,3003,2927925,1.0,True,0.0,0.0,,point prediction,True
+PhantomMedian[k=2]*,1 zone,5,11,15,3003,2927925,1.0,True,0.0,0.0,,point prediction,True
+PhantomMedian[k=2]*,2 zones,5,11,15,3003,2927925,1.0,True,0.0,0.0,,point prediction,True
+PredOrMedian*,unconstrained,3,21,15,1771,1832985,1.0,False,0.222473,0.9,"peaks=(0, 0, 0.95), prediction=1: agent at 0.95 reports 1; facility 0 -> 1, cost 0.95 -> 0.05",point prediction,False
+PredOrMedian*,1 zone,3,21,15,1771,1832985,1.0,False,0.251572,1.0,"peaks=(0, 1, 1), prediction=-0.2: agent at 0 reports -0.5; facility 1 -> 0, cost 1 -> 0",point prediction,False
+PredOrMedian*,2 zones,3,21,15,1771,1832985,1.0,False,0.267231,1.0,"peaks=(0, 1, 1), prediction=-0.2: agent at 0 reports -0.5; facility 1 -> 0, cost 1 -> 0",point prediction,False
+PredOrMedian*,unconstrained,4,15,15,3060,3121200,1.0,False,0.276601,0.9,"peaks=(0, 1, 1, 1), prediction=-0.1: agent at 0 reports -0.5; facility 1 -> -0.1, cost 1 -> 0.1",point prediction,False
+PredOrMedian*,1 zone,4,15,15,3060,3121200,1.0,False,0.308214,1.0,"peaks=(0, 1, 1, 1), prediction=-0.2: agent at 0 reports -0.5; facility 1 -> 0, cost 1 -> 0",point prediction,False
+PredOrMedian*,2 zones,4,15,15,3060,3121200,1.0,False,0.315447,1.0,"peaks=(0, 1, 1, 1), prediction=-0.2: agent at 0 reports -0.5; facility 1 -> 0, cost 1 -> 0",point prediction,False
+PredOrMedian*,unconstrained,5,11,15,3003,2927925,1.0,False,0.233944,0.9,"peaks=(0, 0, 1, 1, 1), prediction=-0.1: agent at 0 reports -0.5; facility 1 -> -0.1, cost 1 -> 0.1",point prediction,False
+PredOrMedian*,1 zone,5,11,15,3003,2927925,1.0,False,0.283361,1.0,"peaks=(0, 0, 1, 1, 1), prediction=-0.2: agent at 0 reports -0.5; facility 1 -> 0, cost 1 -> 0",point prediction,False
+PredOrMedian*,2 zones,5,11,15,3003,2927925,1.0,False,0.290199,1.0,"peaks=(0, 0, 1, 1, 1), prediction=-0.2: agent at 0 reports -0.5; facility 1 -> 0, cost 1 -> 0",point prediction,False
+HullNearestFeasible,unconstrained,3,21,15,1771,1832985,1.0,True,0.0,0.0,,point prediction,False
+HullNearestFeasible,1 zone,3,21,15,1771,1832985,1.0,False,0.14568,0.3,"peaks=(0.35, 0.35, 0.65), prediction=-0.2: agent at 0.65 reports 0.7; facility 0.3 -> 0.7, cost 0.35 -> 0.05",point prediction,False
+HullNearestFeasible,2 zones,3,21,15,1771,1832985,1.0,False,0.121212,0.15,"peaks=(0.6, 0.6, 0.8), prediction=-0.2: agent at 0.6 reports 0.55; facility 0.8 -> 0.55, cost 0.2 -> 0.05",point prediction,False
+HullNearestFeasible,unconstrained,4,15,15,3060,3121200,1.0,True,0.0,0.0,,point prediction,False
+HullNearestFeasible,1 zone,4,15,15,3060,3121200,1.0,False,0.122876,0.285714,"peaks=(0.357, 0.357, 0.357, 0.714), prediction=0.3: agent at 0.357 reports 0; facility 0.7 -> 0.3, cost 0.343 -> 0.0571",point prediction,False
+HullNearestFeasible,2 zones,4,15,15,3060,3121200,1.0,False,0.157734,0.221429,"peaks=(0.571, 0.571, 0.786, 0.786), prediction=-0.2: agent at 0.786 reports 0.857; facility 0.55 -> 0.8, cost 0.236 -> 0.0143",point prediction,False
+HullNearestFeasible,unconstrained,5,11,15,3003,2927925,1.0,True,0.0,0.0,,point prediction,False
+HullNearestFeasible,1 zone,5,11,15,3003,2927925,1.0,False,0.068931,0.2,"peaks=(0.4, 0.4, 0.4, 0.6, 0.6), prediction=-0.2: agent at 0.6 reports 0.7; facility 0.3 -> 0.7, cost 0.3 -> 0.1",point prediction,False
+HullNearestFeasible,2 zones,5,11,15,3003,2927925,1.0,False,0.119991,0.15,"peaks=(0.6, 0.6, 0.6, 0.6, 0.8), prediction=0.6: agent at 0.6 reports 0; facility 0.8 -> 0.55, cost 0.2 -> 0.05",point prediction,False
+MinMaxP+SnapTowardPred,unconstrained,3,21,15,1771,1832985,1.0,True,0.0,0.0,,point prediction,False
+MinMaxP+SnapTowardPred,1 zone,3,21,15,1771,1832985,1.0,False,0.047431,0.3,"peaks=(0.65, 0.7, 0.7), prediction=-0.2: agent at 0.65 reports 0.7; facility 0.3 -> 0.7, cost 0.35 -> 0.05",point prediction,False
+MinMaxP+SnapTowardPred,2 zones,3,21,15,1771,1832985,1.0,False,0.068925,0.15,"peaks=(0.75, 0.8, 0.8), prediction=-0.2: agent at 0.75 reports 0.8; facility 0.55 -> 0.8, cost 0.2 -> 0.05",point prediction,False
+MinMaxP+SnapTowardPred,unconstrained,4,15,15,3060,3121200,1.0,True,0.0,0.0,,point prediction,False
+MinMaxP+SnapTowardPred,1 zone,4,15,15,3060,3121200,1.0,False,0.022876,0.271429,"peaks=(0, 0, 0.286, 0.357), prediction=0.5: agent at 0.357 reports 0; facility 0.7 -> 0.286, cost 0.343 -> 0.0714",point prediction,False
+MinMaxP+SnapTowardPred,2 zones,4,15,15,3060,3121200,1.0,False,0.061438,0.164286,"peaks=(0.786, 0.857, 0.857, 0.857), prediction=-0.2: agent at 0.786 reports 0.857; facility 0.55 -> 0.857, cost 0.236 -> 0.0714",point prediction,False
+MinMaxP+SnapTowardPred,unconstrained,5,11,15,3003,2927925,1.0,True,0.0,0.0,,point prediction,False
+MinMaxP+SnapTowardPred,1 zone,5,11,15,3003,2927925,1.0,False,0.011655,0.2,"peaks=(0.6, 0.7, 0.7, 0.7, 0.7), prediction=-0.2: agent at 0.6 reports 0.7; facility 0.3 -> 0.7, cost 0.3 -> 0.1",point prediction,False
+MinMaxP+SnapTowardPred,2 zones,5,11,15,3003,2927925,1.0,False,0.0442,0.1,"peaks=(0, 0, 0, 0.5, 0.6), prediction=0.7: agent at 0.6 reports 0; facility 0.8 -> 0.5, cost 0.2 -> 0.1",point prediction,False
+CenterMinMaxP*,unconstrained,3,21,28,1771,3421572,1.0,True,0.0,0.0,,interval prediction,True
+CenterMinMaxP*,1 zone,3,21,28,1771,3421572,1.0,True,0.0,0.0,,interval prediction,True
+CenterMinMaxP*,2 zones,3,21,28,1771,3421572,1.0,True,0.0,0.0,,interval prediction,True
+CenterMinMaxP*,unconstrained,4,15,28,3060,5826240,1.0,True,0.0,0.0,,interval prediction,True
+CenterMinMaxP*,1 zone,4,15,28,3060,5826240,1.0,True,0.0,0.0,,interval prediction,True
+CenterMinMaxP*,2 zones,4,15,28,3060,5826240,1.0,True,0.0,0.0,,interval prediction,True
+CenterMinMaxP*,unconstrained,5,11,28,3003,5465460,1.0,True,0.0,0.0,,interval prediction,True
+CenterMinMaxP*,1 zone,5,11,28,3003,5465460,1.0,True,0.0,0.0,,interval prediction,True
+CenterMinMaxP*,2 zones,5,11,28,3003,5465460,1.0,True,0.0,0.0,,interval prediction,True
+IntervalClamp*,unconstrained,3,21,28,1771,3421572,1.0,True,0.0,0.0,,interval prediction,True
+IntervalClamp*,1 zone,3,21,28,1771,3421572,1.0,True,0.0,0.0,,interval prediction,True
+IntervalClamp*,2 zones,3,21,28,1771,3421572,1.0,True,0.0,0.0,,interval prediction,True
+IntervalClamp*,unconstrained,4,15,28,3060,5826240,1.0,True,0.0,0.0,,interval prediction,True
+IntervalClamp*,1 zone,4,15,28,3060,5826240,1.0,True,0.0,0.0,,interval prediction,True
+IntervalClamp*,2 zones,4,15,28,3060,5826240,1.0,True,0.0,0.0,,interval prediction,True
+IntervalClamp*,unconstrained,5,11,28,3003,5465460,1.0,True,0.0,0.0,,interval prediction,True
+IntervalClamp*,1 zone,5,11,28,3003,5465460,1.0,True,0.0,0.0,,interval prediction,True
+IntervalClamp*,2 zones,5,11,28,3003,5465460,1.0,True,0.0,0.0,,interval prediction,True
+Median,1 zone,3,21,1,1771,122199,3.0,True,0.0,0.0,,asymmetric cost (alpha=3),
+Median,2 zones,3,21,1,1771,122199,3.0,True,0.0,0.0,,asymmetric cost (alpha=3),
+Median*,1 zone,3,21,1,1771,122199,3.0,False,0.118577,0.4,"peaks=(0.5, 0.5, 0.55): agent at 0.5 reports 0.55; facility 0.3 -> 0.7, cost 0.6 -> 0.2",asymmetric cost (alpha=3),
+Median*,2 zones,3,21,1,1771,122199,3.0,False,0.106155,0.2,"peaks=(0.25, 0.25, 0.3): agent at 0.25 reports 0.3; facility 0.15 -> 0.35, cost 0.3 -> 0.1",asymmetric cost (alpha=3),
+MinMaxP*,1 zone,3,21,15,1771,1832985,3.0,False,0.06501,0.4,"peaks=(0.5, 0.55, 0.55), prediction=-0.2: agent at 0.5 reports 0.55; facility 0.3 -> 0.7, cost 0.6 -> 0.2",asymmetric cost (alpha=3),
+MinMaxP*,2 zones,3,21,15,1771,1832985,3.0,False,0.063693,0.2,"peaks=(0.25, 0.3, 0.3), prediction=-0.2: agent at 0.25 reports 0.3; facility 0.15 -> 0.35, cost 0.3 -> 0.1",asymmetric cost (alpha=3),
+IntervalClamp*,1 zone,3,21,28,1771,3421572,3.0,False,0.087642,0.4,"peaks=(0.5, 0.55, 0.55), prediction=(-0.1, -0.1): agent at 0.5 reports 0.55; facility 0.3 -> 0.7, cost 0.6 -> 0.2",asymmetric cost (alpha=3),
+IntervalClamp*,2 zones,3,21,28,1771,3421572,3.0,False,0.073828,0.2,"peaks=(0.25, 0.3, 0.3), prediction=(-0.1, -0.1): agent at 0.25 reports 0.3; facility 0.15 -> 0.35, cost 0.3 -> 0.1",asymmetric cost (alpha=3),

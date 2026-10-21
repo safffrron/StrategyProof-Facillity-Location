@@ -1,0 +1,36 @@
+"""Regenerate every result table and figure used in the report.
+
+Usage (from the repository root):
+    python3 experiments/run_all.py
+"""
+
+from __future__ import annotations
+import time
+
+import common  # noqa: F401  (sets sys.path and the plotting backend)
+import e1_strategyproofness
+import e2_point_prediction_error
+import e3_interval_predictions
+import e4_typical_instances
+import e5_confidence_frontier
+import e6_bounds_table
+import e7_doubling_diagram
+
+STEPS = [
+    ("E1 strategyproofness checks", e1_strategyproofness.main),
+    ("E2 point-prediction error", e2_point_prediction_error.main),
+    ("E3 interval predictions", e3_interval_predictions.main),
+    ("E4 typical instances", e4_typical_instances.main),
+    ("E5 confidence frontier", e5_confidence_frontier.main),
+    ("E6 bounds table", e6_bounds_table.main),
+    ("E7 doubling diagram", e7_doubling_diagram.main),
+]
+
+if __name__ == "__main__":
+    t0 = time.time()
+    for label, fn in STEPS:
+        t = time.time()
+        print(f"\n=== {label} ===")
+        fn()
+        print(f"--- {label}: {time.time() - t:.0f}s")
+    print(f"\nAll experiments finished in {time.time() - t0:.0f}s")
