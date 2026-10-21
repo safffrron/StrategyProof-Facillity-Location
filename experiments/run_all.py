@@ -1,4 +1,4 @@
-"""Regenerate every result table and figure used in the report.
+"""Regenerate every result table and figure used in the report (about 4-5 minutes).
 
 Usage (from the repository root):
     python3 experiments/run_all.py
@@ -15,6 +15,10 @@ import e4_typical_instances
 import e5_confidence_frontier
 import e6_bounds_table
 import e7_doubling_diagram
+import e8_lower_bounds_milp
+import e9_asymmetric_costs
+import e10_conformal_intervals
+import e11_randomization
 
 STEPS = [
     ("E1 strategyproofness checks", e1_strategyproofness.main),
@@ -24,6 +28,10 @@ STEPS = [
     ("E5 confidence frontier", e5_confidence_frontier.main),
     ("E6 bounds table", e6_bounds_table.main),
     ("E7 doubling diagram", e7_doubling_diagram.main),
+    ("E8 lower bounds (MILP / LP)", e8_lower_bounds_milp.main),
+    ("E9 asymmetric costs", e9_asymmetric_costs.main),
+    ("E10 conformal intervals", e10_conformal_intervals.main),
+    ("E11 randomization", e11_randomization.main),
 ]
 
 if __name__ == "__main__":

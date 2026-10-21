@@ -53,7 +53,7 @@ def main() -> None:
             kk = np.linspace(0, N - 1, 200)
             ax.plot(1 + 2 * (N + kk - 1) / (N - kk + 1), (3 * N - 1 - kk) / (N + 1 + kk), color=INK_2,
                     linewidth=1.0, zorder=1)
-            ax.text(6.4, 1.62, "conjectured frontier,\nblocked zones (n = 7)", fontsize=7.5, color=INK_2,
+            ax.text(6.4, 1.62, "exact frontier (Thm 9),\nblocked zones (n = 7)", fontsize=7.5, color=INK_2,
                     va="center")
         for i, blocked in enumerate((False, True)):
             sub = [r for r in rows if r["objective"] == objective and r["blocked"] == blocked]

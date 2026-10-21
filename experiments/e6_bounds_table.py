@@ -14,12 +14,13 @@ import os
 from common import RES_DIR, write_markdown_table
 from src.experiment_utils import Scenario, hill_climb
 from src.learning_augmented import (
-    CenterMinMaxP, IntervalClamp, MedianRule, MinMaxP, PhantomMedian, SnapTowardPrediction,
+    CenterMinMaxP, IntervalClamp, MedianRule, MinMaxP, PhantomMedian, RandomizedPredictionSnap, SnapTowardPrediction,
+    TopsGeneralizedMedian, TopsOrderStatistic,
 )
 
 
-def found(mech, objective, n, gaps, mode="none", eta=0.0, omega=0.0) -> float:
-    sc = Scenario(mech, objective, n, n_gaps=gaps, mode=mode, eta=eta, omega=omega)
+def found(mech, objective, n, gaps, mode="none", eta=0.0, omega=0.0, alpha=1.0) -> float:
+    sc = Scenario(mech, objective, n, n_gaps=gaps, mode=mode, eta=eta, omega=omega, alpha=alpha)
     return max(hill_climb(sc, restarts=512, steps=700, seed=s).best_ratio for s in (0, 1, 2))
 
 
@@ -37,32 +38,36 @@ def rows():
     add("open line", "Median", "max", "worst case", 3, 2.0, "Procaccia-Tennenholtz", found(MedianRule(snap=False), "mc", 3, 0))
     add("blocked", "Median*", "max", "worst case", 3, 3.0, "Walsh 2021 (tight)", found(MedianRule(), "mc", 3, 2))
     for n in (3, 5, 7):
-        add("blocked", "Median*", "social", "worst case", n, 3 - 4 / (n + 1), "conjecture (→3: FFG 2016, Walsh 2021)",
+        add("blocked", "Median*", "social", "worst case", n, 3 - 4 / (n + 1), "Thm 9, k = 0 (→3: FFG 2016)",
             found(MedianRule(), "sc", n, 2))
     add("open line", "MinMaxP", "max", "consistency", 3, 1.0, "Agrawal et al. 2022", found(MinMaxP(snap=False), "mc", 3, 0, "error"))
     add("open line", "MinMaxP", "max", "robustness", 3, 2.0, "Agrawal et al. 2022", found(MinMaxP(snap=False), "mc", 3, 0, "robust"))
     add("open line", "MinMaxP", "max", "error η = 0.5", 3, 1.5, "Agrawal; Chan-Lin-Wang", found(MinMaxP(snap=False), "mc", 3, 0, "error", eta=0.5))
     # --- our results, point predictions with blocked zones
-    add("blocked", "MinMaxP*", "max", "consistency", 5, 1.0, "Thm 4", found(MinMaxP(), "mc", 5, 2, "error"))
-    add("blocked", "MinMaxP*", "max", "robustness", 3, 3.0, "Thm 4 (optimal: Walsh LB)", found(MinMaxP(), "mc", 3, 2, "robust"))
+    add("blocked", "MinMaxP*", "max", "consistency", 5, 1.0, "Thm 4; Fang et al. Thm 1", found(MinMaxP(), "mc", 5, 2, "error"))
+    add("blocked", "MinMaxP*", "max", "robustness", 3, 3.0, "Thm 4; Fang et al. Thm 1 (optimal)", found(MinMaxP(), "mc", 3, 2, "robust"))
+    add("blocked", "MinMaxP*", "max", "feasible prediction, η = 0.5", 3, 1.5, "Fang et al. Thm 2",
+        found(MinMaxP(), "mc", 3, 2, "error_feasible", eta=0.5))
     for eta in (0.25, 0.5, 0.75):
-        add("blocked", "MinMaxP*", "max", f"error η = {eta}", 3, min(1 + 2 * eta, 3), "Thm 4 (tight)",
+        add("blocked", "MinMaxP*", "max", f"any prediction, η = {eta}", 3, min(1 + 2 * eta, 3), "Thm 4; optimal by Thm 10",
             found(MinMaxP(), "mc", 3, 2, "error", eta=eta))
+        add("blocked", "Rand[MinMaxP*]", "max", f"any prediction, η = {eta}", 3, min(1 + eta, 3), "Thm 13 (randomized)",
+            found(RandomizedPredictionSnap(MinMaxP()), "mc", 3, 2, "error", eta=eta))
     add("blocked", "MinMaxP+SnapTowardPred", "max", "error η = 0.25", 3, "not SP", "E1",
         found(SnapTowardPrediction(), "mc", 3, 2, "error", eta=0.25))
-    add("blocked", "MinMaxP*", "social", "consistency", 7, 1.0, "Prop 8(a)", found(MinMaxP(), "sc", 7, 2, "error"))
+    add("blocked", "MinMaxP*", "social", "consistency", 7, 1.0, "Prop 8(a); Fang et al. Thm 3", found(MinMaxP(), "sc", 7, 2, "error"))
     for n in (3, 5):
         add("open line", "MinMaxP", "social", "robustness", n, n - 1, "Prop 8(b) (k = n-1)", found(MinMaxP(snap=False), "sc", n, 0, "robust"))
-        add("blocked", "MinMaxP*", "social", "robustness", n, 2 * n - 1, "conjecture", found(MinMaxP(), "sc", n, 2, "robust"))
+        add("blocked", "MinMaxP*", "social", "robustness", n, 2 * n - 1, "Fang et al. Thm 3; Thm 9", found(MinMaxP(), "sc", n, 2, "robust"))
     # --- confidence family, social cost, n = 7
     n = 7
     for k in (0, 2, 4, 6):
-        add("blocked", f"PhantomMedian[k={k}]*", "social", "consistency", n, (3 * n - 1 - k) / (n + 1 + k), "conjecture",
+        add("blocked", f"PhantomMedian[k={k}]*", "social", "consistency", n, (3 * n - 1 - k) / (n + 1 + k), "Thm 9 (exact)",
             found(PhantomMedian(k), "sc", n, 2, "error"))
         add("open line", f"PhantomMedian[k={k}]", "social", "robustness", n, max(1.0, (n + k - 1) / (n - k + 1)), "Prop 8(b)",
             found(PhantomMedian(k, snap=False), "sc", n, 0, "robust"))
         add("blocked", f"PhantomMedian[k={k}]*", "social", "robustness", n, 1 + 2 * (n + k - 1) / (n - k + 1),
-            "conjecture", found(PhantomMedian(k), "sc", n, 2, "robust"))
+            "Thm 9 (exact)", found(PhantomMedian(k), "sc", n, 2, "robust"))
     # --- interval predictions (optimum inside the interval)
     for om in (0.5, 1.0):
         add("open line", "CenterMinMaxP", "max", f"consistency ω = {om}", 3, 1 + min(om / 2, 1), "Thm 6 (optimal in GM class)",
@@ -78,6 +83,16 @@ def rows():
         found(CenterMinMaxP(), "mc", 3, 2, "interval", eta=5.0, omega=0.5))
     add("blocked", "IntervalClamp*", "max", "robustness (η = 5)", 3, 3.0, "Lemma 3",
         found(IntervalClamp(), "mc", 3, 2, "interval", eta=5.0, omega=0.5))
+    for om in (0.5, 1.0):
+        add("blocked", "Rand[centre]", "max", f"consistency ω = {om}", 3, min(1 + om / 2, 3), "Thm 13 (randomized)",
+            found(RandomizedPredictionSnap(MinMaxP(), use_center=True), "mc", 3, 2, "interval", omega=om))
+    for a in (2.0, 3.0):
+        add("blocked", f"Tops-MinMaxP (α={a:g})", "max (asym.)", "consistency", 5, 1.0, "Prop 15",
+            found(TopsGeneralizedMedian(4, a), "mc", 5, 2, "error", alpha=a))
+        add("blocked", f"Tops-MinMaxP (α={a:g})", "max (asym.)", "robustness", 5, 2 + a, "Prop 15",
+            found(TopsGeneralizedMedian(4, a), "mc", 5, 2, "robust", alpha=a))
+        add("blocked", f"Tops-Rightmost (α={a:g})", "max (asym.)", "worst case", 3, 2 + 1 / a, "Prop 15",
+            found(TopsOrderStatistic(1.0, a), "mc", 3, 2, alpha=a))
     add("blocked", "CenterMinMaxP*", "social", "consistency ω = 3", 7, "grows with ω", "E3",
         found(CenterMinMaxP(), "sc", 7, 2, "interval", omega=3.0))
     add("blocked", "IntervalClamp*", "social", "consistency ω = 3", 7, "≈ Median* worst case", "E3",

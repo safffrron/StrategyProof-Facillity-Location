@@ -47,6 +47,16 @@ def feasible_bounds(feasible: Feasible) -> Optional[Tuple[np.ndarray, np.ndarray
     return np.asarray(starts, dtype=float), np.asarray(ends, dtype=float)
 
 
+def _align(bound: np.ndarray, y: np.ndarray) -> np.ndarray:
+    """Broadcast interval bounds (K,) or (P, K) against points y of shape (P,) or (P, n): result
+    has shape y.shape + (K,)."""
+    if bound.ndim == 1:
+        return np.broadcast_to(bound, y.shape + bound.shape)
+    if y.ndim == 2:
+        return np.broadcast_to(bound[:, None, :], y.shape + bound.shape[-1:])
+    return bound
+
+
 def snap_to_feasible(y: np.ndarray, feasible: Feasible, tie_tol: float = TIE_TOL) -> np.ndarray:
     """Map each point to its nearest feasible point; exact ties go to the left.
 
@@ -58,9 +68,7 @@ def snap_to_feasible(y: np.ndarray, feasible: Feasible, tie_tol: float = TIE_TOL
     if bounds is None:
         return y.copy()
     starts, ends = bounds
-    if starts.ndim == 1:
-        starts = np.broadcast_to(starts, y.shape + starts.shape)
-        ends = np.broadcast_to(ends, y.shape + ends.shape)
+    starts, ends = _align(starts, y), _align(ends, y)
     candidates = np.clip(y[..., None], starts, ends)
     dist = np.abs(candidates - y[..., None])
     best = dist.min(axis=-1, keepdims=True)
@@ -75,9 +83,7 @@ def is_feasible_batch(y: np.ndarray, feasible: Feasible, tol: float = 1e-9) -> n
     if bounds is None:
         return np.ones(y.shape, dtype=bool)
     starts, ends = bounds
-    if starts.ndim == 1:
-        starts = np.broadcast_to(starts, y.shape + starts.shape)
-        ends = np.broadcast_to(ends, y.shape + ends.shape)
+    starts, ends = _align(starts, y), _align(ends, y)
     return np.any((y[..., None] >= starts - tol) & (y[..., None] <= ends + tol), axis=-1)
 
 
@@ -87,9 +93,7 @@ def _nearest_feasible_left(m: np.ndarray, feasible: Feasible) -> np.ndarray:
     if bounds is None:
         return m.copy()
     starts, ends = bounds
-    if starts.ndim == 1:
-        starts = np.broadcast_to(starts, m.shape + starts.shape)
-        ends = np.broadcast_to(ends, m.shape + ends.shape)
+    starts, ends = _align(starts, m), _align(ends, m)
     cand = np.where(starts <= m[..., None], np.minimum(ends, m[..., None]), -np.inf)
     return cand.max(axis=-1)
 
@@ -100,9 +104,7 @@ def _nearest_feasible_right(m: np.ndarray, feasible: Feasible) -> np.ndarray:
     if bounds is None:
         return m.copy()
     starts, ends = bounds
-    if starts.ndim == 1:
-        starts = np.broadcast_to(starts, m.shape + starts.shape)
-        ends = np.broadcast_to(ends, m.shape + ends.shape)
+    starts, ends = _align(starts, m), _align(ends, m)
     cand = np.where(ends >= m[..., None], np.maximum(starts, m[..., None]), np.inf)
     return cand.min(axis=-1)
 
@@ -726,3 +728,59 @@ class LRM(BatchMechanism):
     def locate(self, X, feasible=None, prediction=None):
         locs, probs = self.distribution(X, feasible, prediction)
         return (locs * probs).sum(axis=1)
+
+
+class TopsOrderStatistic(BatchMechanism):
+    """The j-th smallest favourite feasible point, j = ceil(q * n) (q in (0, 1]).
+
+    A generalised median with phantoms at +/- infinity, hence strategyproof for every single-peaked
+    cost. With asymmetric costs (facility on the left costs ``alpha`` per unit), the social-cost
+    optimum on an open line is the alpha/(1+alpha) quantile, so ``q = alpha/(1+alpha)`` is the
+    asymmetric analogue of the median.
+    """
+
+    def __init__(self, q: float, alpha: float = 1.0) -> None:
+        super().__init__(snap=False)
+        self.q = float(q)
+        self.alpha = float(alpha)
+
+    @property
+    def name(self) -> str:
+        return f"TopsQuantile[q={self.q:.3g}, a={self.alpha:g}]"
+
+    def pre_snap(self, X, feasible, pred):
+        tops = np.sort(feasible_tops(X, feasible, self.alpha), axis=1)
+        j = min(max(int(np.ceil(self.q * X.shape[1] - 1e-12)), 1), X.shape[1])
+        return tops[:, j - 1]
+
+
+def asymmetric_objective(Y: np.ndarray, X: np.ndarray, objective: str, alpha: float) -> np.ndarray:
+    """Max or total asymmetric cost (see :func:`agent_cost`) of locations ``Y`` (P,) for profiles ``X``."""
+    C = agent_cost(np.asarray(Y)[:, None], X, alpha)
+    return C.max(axis=1) if objective == "mc" else C.sum(axis=1)
+
+
+def asymmetric_optimum(X: np.ndarray, feasible: Feasible, objective: str, alpha: float):
+    """Exact optimum over the feasible set for asymmetric costs (convex piecewise-linear objectives:
+    the minimum is at an interval endpoint, an agent location, or the max-cost balance point)."""
+    X = np.asarray(X, dtype=float)
+    P = X.shape[0]
+    y_bal = (alpha * X.max(axis=1) + X.min(axis=1)) / (1.0 + alpha)
+    pts = np.concatenate([X, y_bal[:, None]], axis=1)
+    bounds = feasible_bounds(feasible)
+    if bounds is None:
+        cand = pts
+    else:
+        starts, ends = bounds
+        if starts.ndim == 1:
+            starts = np.broadcast_to(starts, (P,) + starts.shape)
+            ends = np.broadcast_to(ends, (P,) + ends.shape)
+        clipped = np.clip(pts[:, :, None], starts[:, None, :], ends[:, None, :]).reshape(P, -1)
+        finite_ends = np.concatenate([np.where(np.isfinite(starts), starts, np.nan),
+                                      np.where(np.isfinite(ends), ends, np.nan)], axis=1)
+        cand = np.concatenate([clipped, finite_ends], axis=1)
+    vals = np.stack([asymmetric_objective(np.nan_to_num(cand[:, j], nan=0.0), X, objective, alpha)
+                     for j in range(cand.shape[1])], axis=1)
+    vals = np.where(np.isnan(cand), np.inf, vals)
+    j = np.argmin(vals, axis=1)
+    return cand[np.arange(P), j], vals[np.arange(P), j]

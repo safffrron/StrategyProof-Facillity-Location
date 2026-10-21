@@ -19,6 +19,8 @@ from src.environment import Environment1D
 from src.agents import generate_agents
 from src.learning_augmented import (
     BatchMechanism,
+    asymmetric_objective,
+    asymmetric_optimum,
     is_feasible_batch,
     mechanism_distribution,
     Feasible,
@@ -33,20 +35,25 @@ from src.learning_augmented import (
 # Objectives
 # ============================================================================
 
-def objective_cost(Y: np.ndarray, X: np.ndarray, objective: str) -> np.ndarray:
+def objective_cost(Y: np.ndarray, X: np.ndarray, objective: str, alpha: float = 1.0) -> np.ndarray:
+    if alpha != 1.0:
+        return asymmetric_objective(Y, X, objective, alpha)
     return max_cost_batch(Y, X) if objective == "mc" else social_cost_batch(Y, X)
 
 
-def expected_objective(mech: BatchMechanism, X: np.ndarray, feasible: Feasible, prediction, objective: str) -> np.ndarray:
+def expected_objective(mech: BatchMechanism, X: np.ndarray, feasible: Feasible, prediction, objective: str,
+                       alpha: float = 1.0) -> np.ndarray:
     """Objective value of a (possibly randomized) mechanism, in expectation over its randomness."""
     locs, probs = mechanism_distribution(mech, X, feasible, prediction)
     total = np.zeros(X.shape[0])
     for j in range(locs.shape[1]):
-        total += probs[:, j] * objective_cost(locs[:, j], X, objective)
+        total += probs[:, j] * objective_cost(locs[:, j], X, objective, alpha)
     return total
 
 
-def optimum(X: np.ndarray, feasible: Feasible, objective: str) -> Tuple[np.ndarray, np.ndarray]:
+def optimum(X: np.ndarray, feasible: Feasible, objective: str, alpha: float = 1.0) -> Tuple[np.ndarray, np.ndarray]:
+    if alpha != 1.0:
+        return asymmetric_optimum(X, feasible, objective, alpha)
     return optimal_max_cost_batch(X, feasible) if objective == "mc" else optimal_social_cost_batch(X, feasible)
 
 
@@ -154,6 +161,7 @@ class Scenario:
     eta: float = 0.0
     omega: float = 0.0
     label: str = ""
+    alpha: float = 1.0
 
     @property
     def dim(self) -> int:
@@ -187,7 +195,7 @@ def evaluate(theta: np.ndarray, sc: Scenario) -> Tuple[np.ndarray, dict]:
     X = np.clip(theta[:, :n], 0.0, 1.0)
     feasible = layouts_from_params(theta[:, n:n + 2 * sc.n_gaps], sc.n_gaps)
     p = theta[:, n + 2 * sc.n_gaps:]
-    o_star, opt = optimum(X, feasible, sc.objective)
+    o_star, opt = optimum(X, feasible, sc.objective, sc.alpha)
     scale = error_scale(opt, n, sc.objective)
     if sc.mode == "none":
         pred = None
@@ -204,7 +212,7 @@ def evaluate(theta: np.ndarray, sc: Scenario) -> Tuple[np.ndarray, dict]:
             lo = np.where(p[:, 1] >= 0, o_star + gap, o_star - gap - width)
         pred = np.stack([lo, lo + width], axis=1)
     Y = sc.mechanism.locate(X, feasible, pred)
-    r = ratio(expected_objective(sc.mechanism, X, feasible, pred, sc.objective), opt)
+    r = ratio(expected_objective(sc.mechanism, X, feasible, pred, sc.objective, sc.alpha), opt)
     if sc.mode == "error_feasible":
         r = np.where(is_feasible_batch(pred, feasible), r, 0.0)  # infeasible predictions do not count
     return r, {"X": X, "feasible": feasible, "prediction": pred, "facility": Y, "opt_location": o_star, "opt": opt}
