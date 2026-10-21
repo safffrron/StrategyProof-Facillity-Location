@@ -83,7 +83,7 @@ def theory_line(ax, x, y, label: str, label_at: int = -1, dy: float = 0.0, text_
 def save(fig, name: str) -> str:
     path_png = os.path.join(FIG_DIR, f"{name}.png")
     fig.savefig(path_png)
-    fig.savefig(os.path.join(FIG_DIR, f"{name}.pdf"))
+    fig.savefig(os.path.join(FIG_DIR, f"{name}.pdf"), metadata={"CreationDate": None})  # reproducible bytes
     plt.close(fig)
     return path_png
 

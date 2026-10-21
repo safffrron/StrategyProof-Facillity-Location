@@ -96,9 +96,8 @@ def main() -> None:
         for label, norm, integral, predicted in cases:
             res = solve(D, step, cands, norm, integral)
             rows.append({"Theorem / class": label, "D": D, "grid step": step, "profiles": res["profiles"],
-                         "optimal normalised excess": f"{res['value']:.4f}", "predicted": predicted,
-                         "seconds": f"{res['seconds']:.1f}"})
-            print(rows[-1])
+                         "optimal normalised excess": f"{res['value']:.4f}", "predicted": predicted})
+            print(rows[-1], f"({res['seconds']:.1f}s)")
     write_markdown_table(rows, list(rows[0].keys()), os.path.join(RES_DIR, "e8_lower_bounds.md"),
                          header="Best achievable worst-case excess over ALL deterministic strategyproof (MILP) or randomized truthful-in-expectation (LP) mechanisms "
                                 "(two agents, candidates " + ", ".join(f"{c:g}" for c in cands) +

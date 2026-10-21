@@ -19,6 +19,7 @@ import e8_lower_bounds_milp
 import e9_asymmetric_costs
 import e10_conformal_intervals
 import e11_randomization
+import e12_candidate_lower_bound
 
 STEPS = [
     ("E1 strategyproofness checks", e1_strategyproofness.main),
@@ -32,6 +33,7 @@ STEPS = [
     ("E9 asymmetric costs", e9_asymmetric_costs.main),
     ("E10 conformal intervals", e10_conformal_intervals.main),
     ("E11 randomization", e11_randomization.main),
+    ("E12 randomised lower bound, candidate locations", e12_candidate_lower_bound.main),
 ]
 
 if __name__ == "__main__":

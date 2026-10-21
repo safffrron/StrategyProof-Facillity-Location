@@ -3,7 +3,7 @@
 **CS 6001 Course Project — Department of Computer Science & Engineering, IIT Bombay**
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-70%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-75%20passed-brightgreen.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -12,6 +12,7 @@
 - **Prajwal Nayak** — Roll No. `22B4246`
 - **Siva Kumar Dogga** — Roll No. `24M1528` ([24m1528@iitb.ac.in](mailto:24m1528@iitb.ac.in))
 - **Adnan Khan** — Roll No. `25M0843`
+- **Kislay Aditya Oj** — Roll No. `________`
 
 ---
 
@@ -31,13 +32,14 @@ Existing learning-augmented mechanisms (Agrawal et al. 2022/2024; Fang et al. 20
 Headline findings (statements, proofs and novelty labels in [`docs/RESULTS.md`](docs/RESULTS.md); the full write-up is [`report/report.pdf`](report/report.pdf)):
 
 - **The price of an infeasible prediction is exactly 2.**
-  - When the prediction may fall in a blocked zone, which any interval or any zone-unaware model produces, the best deterministic ratio is $\min(1+2\eta, 3)$. MinMaxP\* attains it, and no deterministic strategyproof mechanism does better.
+  - When the prediction may fall in a blocked zone, which any interval or any zone-unaware model produces, MinMaxP\* has ratio $\min(1+2\eta, 3)$, and for small errors ($\eta \le 1/4$) no deterministic strategyproof mechanism does better.
   - For feasible predictions the ratio is $1+\eta$ (Fang et al.).
   - Universally truthful **randomised snapping** achieves $1+\eta$ in expectation, and that is optimal.
-- **An interval prediction is worth exactly its midpoint** for max cost: $1+\omega/2$ on the open line and $1+\omega$ with blocked zones are tight for all deterministic mechanisms, and randomisation gives $1+\omega/2$. For social cost, clamping the median into the interval is the safe design.
+- **An interval prediction is worth exactly its midpoint** for max cost: $1+\omega/2$ on the open line and $1+\omega$ with blocked zones are tight for all deterministic mechanisms (for $\omega \le 1/2$), and randomisation gives $1+\omega/2$. For social cost, clamping the median into the interval is the safe design.
 - **Exact finite-n social-cost frontier** for the confidence family, $(3n-1-k)/(n+1+k)$ against $(3n+k-1)/(n-k+1)$. It refines Fang et al.'s asymptotic result, and randomised mixtures with the spike mechanism beat it.
 - **Asymmetric costs:** snapping fails, but rules on agents' favourite feasible points are strategyproof for every single-peaked cost, with tight bounds $2+\alpha$ and $2+1/\alpha$.
 - **Calibrated intervals from data:** conformal intervals plus strategyproof interval mechanisms give per-day certificates and much better worst days. A good point prediction still wins on average.
+- **Randomisation without predictions cannot reach 2.** With candidate locations, every truthful-in-expectation mechanism has max-cost ratio at least 2.267, so Tang et al.'s (2020) lower bound of 2 is not tight. The proof is computer-assisted: LP certificates checked in exact rational arithmetic (`results/e12_certificates/`).
 - **Negative results:** the course brief's "prediction if inside, else median", "nearest feasible point to the prediction", "snap toward the prediction", and blocked-zone versions of LRM are all manipulable.
 
 ---
@@ -49,7 +51,7 @@ Headline findings (statements, proofs and novelty labels in [`docs/RESULTS.md`](
 | **Week 1–2** | **Discretized Environment, Baseline Median Mechanism, and Computational Strategyproofness Validator** | **Completed** |
 | **Week 3–4** | Standard Agrawal Single-Point Mechanism & Adaptation to Interval Predictions with Blocked Zones | **Completed** |
 | **Week 5** | Large-Scale Simulations: Consistency-Robustness Curves Across Error & Blocked Density | **Completed** |
-| **Week 6–7** | Adversarial Search for Worst-Case Bounds, Empirical Validation, and Final Report | Search, lower bounds, randomisation, asymmetric costs, conformal pipeline **completed**; report drafted |
+| **Week 6–7** | Adversarial Search for Worst-Case Bounds, Empirical Validation, and Final Report | Search, lower bounds, randomisation, asymmetric costs, conformal pipeline, randomised lower bound with candidates **completed**; report drafted |
 
 ---
 
@@ -136,15 +138,16 @@ $$\forall i \in \{1, \dots, n\}, \; \forall x'_i \in G: \quad |f(x_i, x_{-i}) - 
 | `src/learning_augmented.py` | Vectorised mechanisms: Median, Leftmost, Dictator, MinMaxP, `PhantomMedian[k]` (confidence family), `CenterMinMaxP` and `IntervalClamp` (interval predictions). Each can optionally snap to the nearest feasible point. Also includes the manipulable baselines and exact constrained optima |
 | `src/fast_validator.py` | Exhaustive checker over every profile, agent, misreport and prediction (≈180× faster than `src/validator.py`); supports asymmetric costs |
 | `src/experiment_utils.py` | Predictions with controlled error and width, typical-instance sampling (reuses `Environment1D` and `generate_agents`), and a cluster-aware adversarial hill-climbing search |
-| `experiments/e1`–`e11` | Strategyproofness table, error-doubling curves, interval width, typical instances, confidence frontier, bounds-versus-search table (52 bounds), tight-instance diagram, MILP/LP lower bounds, asymmetric costs, conformal intervals, randomisation |
+| `src/candidate_lower_bound.py` | LP lower bounds for randomised mechanisms with candidate locations (grid relaxation, symmetrisation, constraint generation) and an exact-arithmetic certificate checker |
+| `experiments/e1`–`e12` | Strategyproofness table, error-doubling curves, interval width, typical instances, confidence frontier, bounds-versus-search table (52 bounds), tight-instance diagram, MILP/LP lower bounds, asymmetric costs, conformal intervals, randomisation, certified randomised lower bound with candidates |
 | `docs/RESULTS.md` | Theorems, proofs, conjectures and how each figure supports them |
 
-Regenerate every table and figure (≈5 minutes):
+Regenerate every table and figure (≈8 minutes; `python3 experiments/e12_candidate_lower_bound.py --full` also re-solves the large lower-bound LPs):
 ```bash
 python3 experiments/run_all.py
 ```
 
-Key figures: `figures/e11_randomization.png`, `figures/e3_interval_width.png`, `figures/e10_conformal.png`, `figures/e9_asymmetric.png`, `figures/e5_confidence_frontier.png`, `figures/e2_error_doubling.png`. Key tables: `results/sp_table.md`, `results/bounds_table.md`, `results/e8_lower_bounds.md`, `results/e9_asymmetric.md`, `results/e10_conformal.md`. Reading path for newcomers: [`docs/READING_LIST.md`](docs/READING_LIST.md).
+Key figures: `figures/e11_randomization.png`, `figures/e3_interval_width.png`, `figures/e10_conformal.png`, `figures/e9_asymmetric.png`, `figures/e5_confidence_frontier.png`, `figures/e2_error_doubling.png`. Key tables: `results/sp_table.md`, `results/bounds_table.md`, `results/e8_lower_bounds.md`, `results/e9_asymmetric.md`, `results/e10_conformal.md`, `results/e12_candidate_lb.md`. Reading path for newcomers: [`docs/READING_LIST.md`](docs/READING_LIST.md).
 
 ---
 
@@ -159,7 +162,7 @@ pip install -r requirements.txt
 ```
 
 ### 2. Running Unit Tests
-Execute the full test suite (70 passing tests):
+Execute the full test suite (75 passing tests):
 ```bash
 python3 -m pytest -v tests/
 ```
