@@ -469,3 +469,260 @@ class IntervalPhantoms(BatchMechanism):
         n_lo = n - 1 - n_hi
         Z = np.concatenate([X, np.repeat(lo[:, None], n_lo, axis=1), np.repeat(hi[:, None], n_hi, axis=1)], axis=1)
         return lower_median(Z)
+
+
+# ============================================================================
+# Randomized mechanisms (returned as finite distributions over locations)
+# ============================================================================
+
+def _gap_endpoints(p: np.ndarray, feasible: Feasible) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """For each point: (left feasible neighbour, right feasible neighbour, is_feasible)."""
+    left = _nearest_feasible_left(p, feasible)
+    right = _nearest_feasible_right(p, feasible)
+    return left, right, is_feasible_batch(p, feasible)
+
+
+def mean_preserving_rounding(p: np.ndarray, feasible: Feasible) -> Tuple[np.ndarray, np.ndarray]:
+    """Round each point to a random feasible point with the same mean.
+
+    A point inside a blocked zone (g1, g2) goes to g1 with probability (g2 - p)/(g2 - g1) and to g2
+    otherwise; feasible points (and points beyond the outermost feasible interval, which have a
+    single nearest feasible point) are kept deterministic. Returns ``(locs, probs)`` of shape (P, 2).
+    """
+    p = np.asarray(p, dtype=float)
+    left, right, feas = _gap_endpoints(p, feasible)
+    both = np.isfinite(left) & np.isfinite(right) & ~feas
+    gap = np.where(both, right - left, 1.0)
+    w_right = np.where(both, (p - np.where(both, left, 0.0)) / gap, 0.0)
+    single = snap_to_feasible(p, feasible)
+    loc_left = np.where(both, left, single)
+    loc_right = np.where(both, right, single)
+    return np.stack([loc_left, loc_right], axis=1), np.stack([1.0 - w_right, w_right], axis=1)
+
+
+class RandomizedPredictionSnap(BatchMechanism):
+    """Randomized snapping of the prediction (new).
+
+    If the (point) prediction lies in a blocked zone, replace it by one of the zone's endpoints using
+    :func:`mean_preserving_rounding`, then run ``base`` (a snapped generalised median such as MinMaxP*
+    or PhantomMedian[k]*) with that feasible prediction. This is a report-independent mixture of two
+    strategyproof mechanisms, hence universally truthful. For interval predictions, ``use_center``
+    rounds the interval's midpoint instead.
+    """
+    randomized = True
+
+    def __init__(self, base: BatchMechanism, use_center: bool = False) -> None:
+        super().__init__(snap=True)
+        if base.prediction_type != "point":
+            raise ValueError("RandomizedPredictionSnap needs a point-prediction base mechanism (e.g. MinMaxP).")
+        self.base = base
+        self.use_center = use_center
+        self.prediction_type = "interval" if use_center else "point"
+
+    @property
+    def name(self) -> str:
+        return f"Rand[{self.base.name}" + (", centre]" if self.use_center else "]")
+
+    def distribution(self, X: np.ndarray, feasible: Feasible = None, prediction=None):
+        X = np.atleast_2d(np.asarray(X, dtype=float))
+        P = X.shape[0]
+        pred = self.prediction if prediction is None else prediction
+        if self.use_center:
+            lo, hi = self._interval(pred, P)
+            point = 0.5 * (lo + hi)
+        else:
+            point = self._point(pred, P)
+        if feasible_bounds(feasible) is None:
+            return self.base.locate(X, feasible, point)[:, None], np.ones((P, 1))
+        preds, probs = mean_preserving_rounding(point, feasible)
+        locs = np.stack([self.base.locate(X, feasible, preds[:, j]) for j in range(preds.shape[1])], axis=1)
+        return locs, probs
+
+    def locate(self, X, feasible=None, prediction=None):
+        """Expected location (for plotting only; costs must use :meth:`distribution`)."""
+        locs, probs = self.distribution(X, feasible, prediction)
+        return (locs * probs).sum(axis=1)
+
+
+class SpikeMechanism(BatchMechanism):
+    """Feldman, Fiat & Golomb (EC 2016) spike mechanism on agents' favourite feasible points.
+
+    Sort the favourite feasible points (tops) z_1 <= ... <= z_n and pick z_j with probability
+    p_j = P(j) - P(j-1), where P(j) = j / (2(n-j)) for 0 < j <= n/2 and P(j) = 1.5 - n/(2j) for
+    j > n/2. Universally truthful; 2-approximate for social cost with candidate locations.
+    """
+    randomized = True
+    base_name = "Spike"
+
+    def __init__(self, alpha: float = 1.0) -> None:
+        super().__init__(snap=True)
+        self.alpha = alpha
+
+    @staticmethod
+    def weights(n: int) -> np.ndarray:
+        def P(j):
+            if j == 0:
+                return 0.0
+            return j / (2.0 * (n - j)) if j <= n / 2 else 1.5 - n / (2.0 * j)
+        return np.array([P(j) - P(j - 1) for j in range(1, n + 1)])
+
+    def distribution(self, X: np.ndarray, feasible: Feasible = None, prediction=None):
+        X = np.atleast_2d(np.asarray(X, dtype=float))
+        tops = np.sort(feasible_tops(X, feasible, self.alpha), axis=1)
+        return tops, np.broadcast_to(self.weights(X.shape[1]), tops.shape).copy()
+
+    def locate(self, X, feasible=None, prediction=None):
+        locs, probs = self.distribution(X, feasible, prediction)
+        return (locs * probs).sum(axis=1)
+
+
+class MixtureMechanism(BatchMechanism):
+    """Report-independent mixture: run ``first`` with probability 1 - q and ``second`` with q."""
+    randomized = True
+
+    def __init__(self, first: BatchMechanism, second: BatchMechanism, q: float) -> None:
+        super().__init__(snap=True)
+        self.first, self.second, self.q = first, second, float(q)
+        self.prediction_type = first.prediction_type or second.prediction_type
+
+    @property
+    def name(self) -> str:
+        return f"Mix[{self.first.name} | {self.second.name}, q={self.q:g}]"
+
+    def distribution(self, X, feasible=None, prediction=None):
+        l1, p1 = mechanism_distribution(self.first, X, feasible, prediction)
+        l2, p2 = mechanism_distribution(self.second, X, feasible, prediction)
+        return np.concatenate([l1, l2], axis=1), np.concatenate([(1 - self.q) * p1, self.q * p2], axis=1)
+
+    def locate(self, X, feasible=None, prediction=None):
+        locs, probs = self.distribution(X, feasible, prediction)
+        return (locs * probs).sum(axis=1)
+
+
+def mechanism_distribution(mech: BatchMechanism, X: np.ndarray, feasible: Feasible = None, prediction=None):
+    """(locations, probabilities) of any mechanism; deterministic ones get a single atom."""
+    if getattr(mech, "randomized", False):
+        return mech.distribution(X, feasible, prediction)
+    y = mech.locate(X, feasible, prediction)
+    return y[:, None], np.ones((y.shape[0], 1))
+
+
+def expected_agent_cost(mech: BatchMechanism, X: np.ndarray, peaks: np.ndarray, feasible: Feasible = None,
+                        prediction=None, alpha: float = 1.0) -> np.ndarray:
+    """Expected cost of the agents with the given peaks (row-wise) under ``mech`` on reports ``X``."""
+    locs, probs = mechanism_distribution(mech, X, feasible, prediction)
+    return (agent_cost(locs, peaks[:, None], alpha) * probs).sum(axis=1)
+
+
+# ============================================================================
+# Asymmetric single-peaked costs: mechanisms on favourite feasible points ("tops")
+# ============================================================================
+
+def feasible_tops(X: np.ndarray, feasible: Feasible, alpha: float = 1.0) -> np.ndarray:
+    """Each agent's favourite feasible point under cost ``agent_cost(., x, alpha)`` (ties to the left).
+
+    With alpha = 1 this is the nearest feasible point (``snap_to_feasible``).
+    """
+    X = np.asarray(X, dtype=float)
+    if feasible_bounds(feasible) is None:
+        return X.copy()
+    left = _nearest_feasible_left(X, feasible)
+    right = _nearest_feasible_right(X, feasible)
+    c_left = np.where(np.isfinite(left), agent_cost(np.where(np.isfinite(left), left, 0.0), X, alpha), np.inf)
+    c_right = np.where(np.isfinite(right), agent_cost(np.where(np.isfinite(right), right, 0.0), X, alpha), np.inf)
+    return np.where(c_right < c_left - TIE_TOL, right, left)
+
+
+class TopsGeneralizedMedian(BatchMechanism):
+    """Generalised median over agents' favourite feasible points (new, for asymmetric costs).
+
+    Each report is mapped to the agent's favourite feasible point under the (common, known) cost
+    asymmetry ``alpha``; the output is the median of these tops plus ``k`` phantoms at a fixed
+    feasible version of the prediction (deterministic nearest-point snap of the prediction). The
+    output is always feasible. Preferences restricted to the ordered feasible set are single-peaked,
+    so by Moulin's theorem the rule is strategyproof for every single-peaked cost, not only symmetric
+    ones. With alpha = 1, k = 0 it equals Median*, and with k = n - 1 it equals MinMaxP*.
+    """
+
+    def __init__(self, k: int = 0, alpha: float = 1.0, prediction=None) -> None:
+        super().__init__(snap=False, prediction=prediction)
+        self.k = int(k)
+        self.alpha = float(alpha)
+        self.prediction_type = "point" if self.k > 0 else None
+
+    @property
+    def name(self) -> str:
+        return f"Tops[k={self.k}, a={self.alpha:g}]"
+
+    def pre_snap(self, X, feasible, pred):
+        tops = feasible_tops(X, feasible, self.alpha)
+        if self.k == 0:
+            return lower_median(tops)
+        p = snap_to_feasible(self._point(pred, X.shape[0]), feasible)
+        Z = np.concatenate([tops, np.repeat(p[:, None], self.k, axis=1)], axis=1)
+        return lower_median(Z)
+
+
+class RoundedOutput(BatchMechanism):
+    """Mean-preserving randomized rounding of a mechanism's *unsnapped output* (negative example).
+
+    Unlike :class:`RandomizedPredictionSnap`, the random rounding is applied to a report-dependent
+    point, which lets agents located inside a blocked zone gain by misreporting.
+    """
+    randomized = True
+
+    def __init__(self, base: BatchMechanism) -> None:
+        super().__init__(snap=True)
+        self.base = base
+        self.prediction_type = base.prediction_type
+
+    @property
+    def name(self) -> str:
+        return f"RoundOut[{self.base.name}]"
+
+    def distribution(self, X, feasible=None, prediction=None):
+        X = np.atleast_2d(np.asarray(X, dtype=float))
+        pred = self.base.prediction if prediction is None else prediction
+        y = self.base.pre_snap(X, feasible, pred)
+        if feasible_bounds(feasible) is None:
+            return y[:, None], np.ones((X.shape[0], 1))
+        return mean_preserving_rounding(y, feasible)
+
+    def locate(self, X, feasible=None, prediction=None):
+        locs, probs = self.distribution(X, feasible, prediction)
+        return (locs * probs).sum(axis=1)
+
+
+class LRM(BatchMechanism):
+    """Procaccia-Tennenholtz Left-Right-Middle (1/4, 1/4, 1/2), optionally on favourite feasible
+    points ("tops") and/or with mean-preserving rounding of the middle point. Max-cost baseline."""
+    randomized = True
+
+    def __init__(self, tops: bool = False, round_middle: bool = True) -> None:
+        super().__init__(snap=True)
+        self.tops = tops
+        self.round_middle = round_middle
+
+    @property
+    def name(self) -> str:
+        return "LRM" + ("[tops]" if self.tops else "") + ("*" if self.round_middle else "")
+
+    def distribution(self, X, feasible=None, prediction=None):
+        X = np.atleast_2d(np.asarray(X, dtype=float))
+        Z = feasible_tops(X, feasible) if self.tops else X
+        lo, hi = Z.min(axis=1), Z.max(axis=1)
+        mid = 0.5 * (lo + hi)
+        if feasible_bounds(feasible) is None:
+            locs = np.stack([lo, hi, mid], axis=1)
+            return locs, np.broadcast_to([0.25, 0.25, 0.5], locs.shape).copy()
+        if self.round_middle:
+            ml, mp = mean_preserving_rounding(mid, feasible)
+        else:
+            ml, mp = snap_to_feasible(mid, feasible)[:, None], np.ones((X.shape[0], 1))
+        locs = np.concatenate([snap_to_feasible(lo, feasible)[:, None], snap_to_feasible(hi, feasible)[:, None], ml], axis=1)
+        probs = np.concatenate([np.full((X.shape[0], 2), 0.25), 0.5 * mp], axis=1)
+        return locs, probs
+
+    def locate(self, X, feasible=None, prediction=None):
+        locs, probs = self.distribution(X, feasible, prediction)
+        return (locs * probs).sum(axis=1)

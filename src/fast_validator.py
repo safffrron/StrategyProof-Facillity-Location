@@ -11,11 +11,11 @@ is a permutation of one of them, and permuting agents permutes the deviations on
 from __future__ import annotations
 from dataclasses import dataclass, field
 from itertools import combinations_with_replacement, product
-from typing import Iterable, List, Optional, Sequence
+from typing import Callable, Iterable, List, Optional, Sequence
 import time
 import numpy as np
 
-from src.learning_augmented import BatchMechanism, Feasible, agent_cost
+from src.learning_augmented import BatchMechanism, Feasible, agent_cost, expected_agent_cost
 
 
 @dataclass
@@ -110,8 +110,12 @@ def check_strategyproofness(
     alpha: float = 1.0,
     tol: float = 1e-9,
     setting: str = "",
+    truthful_action: Optional[Callable[[np.ndarray], np.ndarray]] = None,
 ) -> SPReport:
     """Exhaustively search for a profitable unilateral misreport.
+
+    Randomized mechanisms (``mechanism.randomized``) are checked for truthfulness in expectation:
+    expected costs are compared.
 
     Args:
         mechanism: Mechanism to check.
@@ -123,6 +127,8 @@ def check_strategyproofness(
         alpha: Cost asymmetry (1 = symmetric distance), see :func:`agent_cost`.
         tol: A deviation counts only if it lowers the agent's cost by more than ``tol``.
         setting: Label for reports.
+        truthful_action: Maps true peaks to truthful reports (default: report the peak). For
+            mechanisms where agents vote for their favourite feasible point, pass that map.
     """
     start = time.time()
     grid = np.asarray(grid, dtype=float)
@@ -132,22 +138,23 @@ def check_strategyproofness(
     misreports = np.asarray(misreports, dtype=float)
 
     X = enumerate_profiles(grid, n_agents, anonymous=mechanism.anonymous)
+    R = X.copy() if truthful_action is None else truthful_action(X)
     P = X.shape[0]
     n_violating = 0
     max_gain = 0.0
     best: Optional[Counterexample] = None
 
     for pred in predictions:
-        y_true = mechanism.locate(X, feasible, pred)
+        y_true = mechanism.locate(R, feasible, pred)
         violating = np.zeros(P, dtype=bool)
         for i in range(n_agents):
             peaks = X[:, i]
-            cost_true = agent_cost(y_true, peaks, alpha)
-            X_dev = X.copy()
+            cost_true = expected_agent_cost(mechanism, R, peaks, feasible, pred, alpha)
+            X_dev = R.copy()
             for r in misreports:
                 X_dev[:, i] = r
                 y_dev = mechanism.locate(X_dev, feasible, pred)
-                gain = cost_true - agent_cost(y_dev, peaks, alpha)
+                gain = cost_true - expected_agent_cost(mechanism, X_dev, peaks, feasible, pred, alpha)
                 hit = gain > tol
                 if hit.any():
                     violating |= hit

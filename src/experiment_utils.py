@@ -19,6 +19,8 @@ from src.environment import Environment1D
 from src.agents import generate_agents
 from src.learning_augmented import (
     BatchMechanism,
+    is_feasible_batch,
+    mechanism_distribution,
     Feasible,
     max_cost_batch,
     optimal_max_cost_batch,
@@ -33,6 +35,15 @@ from src.learning_augmented import (
 
 def objective_cost(Y: np.ndarray, X: np.ndarray, objective: str) -> np.ndarray:
     return max_cost_batch(Y, X) if objective == "mc" else social_cost_batch(Y, X)
+
+
+def expected_objective(mech: BatchMechanism, X: np.ndarray, feasible: Feasible, prediction, objective: str) -> np.ndarray:
+    """Objective value of a (possibly randomized) mechanism, in expectation over its randomness."""
+    locs, probs = mechanism_distribution(mech, X, feasible, prediction)
+    total = np.zeros(X.shape[0])
+    for j in range(locs.shape[1]):
+        total += probs[:, j] * objective_cost(locs[:, j], X, objective)
+    return total
 
 
 def optimum(X: np.ndarray, feasible: Feasible, objective: str) -> Tuple[np.ndarray, np.ndarray]:
@@ -129,8 +140,10 @@ class Scenario:
 
     Attributes:
         mode: ``"none"`` (no prediction), ``"robust"`` (arbitrary point prediction),
-            ``"error"`` (point prediction with error <= eta), ``"interval"`` (interval prediction of
-            normalised width omega at error eta; eta = 0 means it contains the optimum).
+            ``"error"`` (point prediction with error <= eta), ``"error_feasible"`` (as ``"error"``,
+            but the prediction must be a feasible point, as in Fang et al. 2025), ``"interval"``
+            (interval prediction of normalised width omega at error eta; eta = 0 means it contains
+            the optimum).
         n_gaps: Number of blocked zones (0 = unconstrained real line).
     """
     mechanism: BatchMechanism
@@ -144,7 +157,7 @@ class Scenario:
 
     @property
     def dim(self) -> int:
-        extra = {"none": 0, "robust": 1, "error": 1, "interval": 2}[self.mode]
+        extra = {"none": 0, "robust": 1, "error": 1, "error_feasible": 1, "interval": 2}[self.mode]
         return self.n + 2 * self.n_gaps + extra
 
 
@@ -180,7 +193,7 @@ def evaluate(theta: np.ndarray, sc: Scenario) -> Tuple[np.ndarray, dict]:
         pred = None
     elif sc.mode == "robust":
         pred = np.clip(p[:, 0], -1.0, 2.0)
-    elif sc.mode == "error":
+    elif sc.mode in ("error", "error_feasible"):
         pred = o_star + np.clip(p[:, 0], -1.0, 1.0) * sc.eta * scale
     else:
         width = sc.omega * scale
@@ -191,7 +204,9 @@ def evaluate(theta: np.ndarray, sc: Scenario) -> Tuple[np.ndarray, dict]:
             lo = np.where(p[:, 1] >= 0, o_star + gap, o_star - gap - width)
         pred = np.stack([lo, lo + width], axis=1)
     Y = sc.mechanism.locate(X, feasible, pred)
-    r = ratio(objective_cost(Y, X, sc.objective), opt)
+    r = ratio(expected_objective(sc.mechanism, X, feasible, pred, sc.objective), opt)
+    if sc.mode == "error_feasible":
+        r = np.where(is_feasible_batch(pred, feasible), r, 0.0)  # infeasible predictions do not count
     return r, {"X": X, "feasible": feasible, "prediction": pred, "facility": Y, "opt_location": o_star, "opt": opt}
 
 
