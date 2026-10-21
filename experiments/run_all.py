@@ -1,4 +1,4 @@
-"""Regenerate every result table and figure used in the report (about 4-5 minutes).
+"""Regenerate every result table and figure used in the report (about 10 minutes).
 
 Usage (from the repository root):
     python3 experiments/run_all.py
@@ -20,6 +20,7 @@ import e9_asymmetric_costs
 import e10_conformal_intervals
 import e11_randomization
 import e12_candidate_lower_bound
+import e13_double_peaked
 
 STEPS = [
     ("E1 strategyproofness checks", e1_strategyproofness.main),
@@ -34,6 +35,7 @@ STEPS = [
     ("E10 conformal intervals", e10_conformal_intervals.main),
     ("E11 randomization", e11_randomization.main),
     ("E12 randomised lower bound, candidate locations", e12_candidate_lower_bound.main),
+    ("E13 double-peaked preferences", e13_double_peaked.main),
 ]
 
 if __name__ == "__main__":

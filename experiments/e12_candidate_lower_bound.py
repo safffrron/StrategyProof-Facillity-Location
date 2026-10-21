@@ -113,9 +113,10 @@ def figure(points):
     xs = [p[0] for p in points]
     ys = [p[1] for p in points]
     bx.plot(xs, ys, color=SERIES[0], marker="o", markersize=6, zorder=3)
-    for x, y in points:
-        bx.annotate(f"{y:.3f}", (x, y), xytext=(0, 6), textcoords="offset points", ha="center", fontsize=7.5,
-                    color=INK)
+    for i, (x, y) in enumerate(points):
+        below = i % 2 == 1                                        # alternate sides so close labels do not collide
+        bx.annotate(f"{int(y * 1000) / 1000:.3f}", (x, y), xytext=(0, -12 if below else 6), textcoords="offset points",
+                    ha="center", fontsize=7.5, color=INK)
     lo, hi = min(xs) - 15, max(xs) + 25
     theory_line(bx, [lo, hi], [2, 2], "previous lower bound 2 (Tang et al.)", text_xy=(lo + 3, 1.93))
     theory_line(bx, [lo, hi], [3, 3], "deterministic / universally truthful: 3 (tight)", text_xy=(lo + 3, 2.93))
