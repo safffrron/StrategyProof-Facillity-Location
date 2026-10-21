@@ -202,24 +202,65 @@ class SearchResult:
     instance: dict = field(default_factory=dict)
 
 
-def hill_climb(sc: Scenario, restarts: int = 256, steps: int = 400, seed: int = 0,
-               sigma_start: float = 0.15, sigma_end: float = 0.002) -> SearchResult:
-    """Batched random-restart hill climbing over agent positions, blocked zones and the prediction."""
-    rng = np.random.default_rng(seed)
+def _initial_theta(sc: Scenario, restarts: int, rng: np.random.Generator) -> np.ndarray:
     theta = rng.uniform(0.0, 1.0, size=(restarts, sc.dim))
+    # Half of the restarts start *clustered*: agents sit on 1-3 common points. Worst cases of
+    # median-type rules put many agents on the same spot (cf. Agrawal et al., Lemma 4.2), which
+    # independent per-agent perturbations rarely discover.
+    half = restarts // 2
+    n_clusters = rng.integers(1, 4, size=half)
+    centres = rng.uniform(0.0, 1.0, size=(half, 3))
+    assign = (rng.random((half, sc.n)) * n_clusters[:, None]).astype(int)
+    theta[:half, :sc.n] = np.take_along_axis(centres, assign, axis=1)
     if sc.n_gaps:
-        theta[:, sc.n + 1:sc.n + 2 * sc.n_gaps:2] *= 0.25  # start with moderate gap half-lengths
-    if sc.mode in ("error",):
-        theta[:, -1] = rng.uniform(-1, 1, size=restarts)
-    if sc.mode == "interval":
+        theta[:, sc.n + 1:sc.n + 2 * sc.n_gaps:2] *= 0.25  # moderate gap half-lengths
+    if sc.mode in ("error", "interval"):
         theta[:, -1] = rng.uniform(-1, 1, size=restarts)
     if sc.mode == "robust":
         theta[:, -1] = rng.uniform(-0.5, 1.5, size=restarts)
+    return theta
+
+
+def _propose(theta: np.ndarray, sc: Scenario, sigma: float, rng: np.random.Generator) -> np.ndarray:
+    """One proposal per row, mixing three move types:
+    independent Gaussian jitter, moving a whole cluster of coincident agents, and merging two agents."""
+    R, n = theta.shape[0], sc.n
+    prop = theta + (rng.random(theta.shape) < 0.5) * rng.normal(0.0, sigma, size=theta.shape)
+    move = rng.random(R)
+    rows = np.arange(R)
+    # cluster move: shift every agent within 1e-6 of a random agent by the same amount
+    cl = move < 0.25
+    if cl.any():
+        j = rng.integers(0, n, size=R)
+        X = theta[:, :n]
+        same = np.abs(X - X[rows, j][:, None]) < 1e-6
+        delta = rng.normal(0.0, sigma, size=R)
+        prop[cl, :n] = (X + same * delta[:, None])[cl]
+        prop[cl, n:] = theta[cl, n:]
+    # merge: put a random agent exactly on another agent's position
+    mg = (move >= 0.25) & (move < 0.4)
+    if mg.any():
+        i = rng.integers(0, n, size=R)
+        j = rng.integers(0, n, size=R)
+        merged = theta.copy()
+        merged[rows, i] = theta[rows, j]
+        prop[mg] = merged[mg]
+    return prop
+
+
+def hill_climb(sc: Scenario, restarts: int = 256, steps: int = 400, seed: int = 0,
+               sigma_start: float = 0.15, sigma_end: float = 0.002) -> SearchResult:
+    """Batched random-restart hill climbing over agent positions, blocked zones and the prediction.
+
+    The value found is a *lower bound* on the true worst case (it is attained by an explicit
+    instance); it matches a proved upper bound only when the bound is tight.
+    """
+    rng = np.random.default_rng(seed)
+    theta = _initial_theta(sc, restarts, rng)
     cur, _ = evaluate(theta, sc)
     sigmas = np.geomspace(sigma_start, sigma_end, steps)
     for s in sigmas:
-        mask = rng.random(theta.shape) < 0.5
-        prop = theta + mask * rng.normal(0.0, s, size=theta.shape)
+        prop = _propose(theta, sc, s, rng)
         val, _ = evaluate(prop, sc)
         better = val >= cur
         theta[better] = prop[better]
