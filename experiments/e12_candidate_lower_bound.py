@@ -7,7 +7,7 @@ finite grid lower-bounds every TIE mechanism on the line. We compute it by linea
 (src/candidate_lower_bound.py) and certify every value in exact rational arithmetic.
 
 Default run: re-solve the quick configurations and re-verify every stored certificate (seconds).
-``--full``: also re-solve the large grids and overwrite their certificates (about 30 minutes).
+``--full``: also re-solve the large grids and overwrite their certificates (about an hour; needs the highspy package).
 
 Outputs: results/e12_candidate_lb.md, results/e12_certificates/*.json, figures/e12_candidate_lb.{png,pdf}
 """
@@ -29,34 +29,40 @@ RICH = ("1/500", "1/50", "1/20", "1/10", "1/5", "3/10")
 DENSE = ("1/1000", "1/500", "1/200", "1/100", "1/50", "3/100", "1/20", "7/100", "1/10", "3/20", "1/5", "1/4",
          "3/10", "2/5")
 
-# name, candidates, grid keyword arguments, impose every misreport (constraint generation)?, quick?
+GEOMETRIC = ("1/2000", "1/1000", "1/500", "3/1000", "1/200", "7/1000", "1/100", "3/200", "1/50", "1/40", "3/100",
+             "1/25", "1/20", "7/100", "1/10", "3/20", "1/5", "1/4", "3/10", "2/5")
+
+# name, candidates, grid keyword arguments, solver keyword arguments, quick?
+# ("ipm-polish" needs the highspy package: interior point, then simplex on the tight misreport rows)
 CONFIGS = [
-    ("C2_basic", [0, 2], dict(), True, True),
-    ("C3_basic", [0, 2, 4], dict(), True, True),
-    ("C3_rich", [0, 2, 4], dict(offsets=RICH, step="1/4", lo=-1, hi=5), False, False),
-    ("C3_mirror", [0, 2, 4], dict(offsets=RICH, step="1/4", lo=-1, hi=5, mirror=True), False, False),
-    ("C3_dense", [0, 2, 4], dict(offsets=DENSE, step="1/4", lo=-1, hi=5, mirror=True), False, False),
+    ("C2_basic", [0, 2], dict(), dict(generate=True), True),
+    ("C3_basic", [0, 2, 4], dict(), dict(generate=True), True),
+    ("C3_rich", [0, 2, 4], dict(offsets=RICH, step="1/4", lo=-1, hi=5), dict(generate=False), False),
+    ("C3_mirror", [0, 2, 4], dict(offsets=RICH, step="1/4", lo=-1, hi=5, mirror=True), dict(generate=False), False),
+    ("C3_dense", [0, 2, 4], dict(offsets=DENSE, step="1/4", lo=-1, hi=5, mirror=True), dict(generate=False), False),
+    ("C3_geometric", [0, 2, 4], dict(offsets=GEOMETRIC, step="1/4", lo=-2, hi=6, mirror=True),
+     dict(generate=False, method="ipm-polish"), False),
 ]
 GRID_LABEL = {"C2_basic": "basic", "C3_basic": "basic", "C3_rich": "rich", "C3_mirror": "rich + mirrored",
-              "C3_dense": "dense + mirrored"}
+              "C3_dense": "dense + mirrored", "C3_geometric": "geometric + mirrored"}
 
 
-def run_config(name, C, kw, generate):
+def run_config(name, C, kw, solve_kw):
     lp = CandidateLP(C, refined_grid(C, **kw))
     t0 = time.time()
-    lp.solve(generate=generate)
+    lp.solve(**solve_kw)
     cert = lp.certificate()
-    cert["seconds"] = round(time.time() - t0, 1)
     cert["name"] = name
     save_certificate(cert, os.path.join(CERT_DIR, f"{name}.json"))
+    cert["seconds"] = round(time.time() - t0, 1)                 # reported, not stored: keeps files reproducible
     return cert
 
 
 def main(full: bool = False):
     os.makedirs(CERT_DIR, exist_ok=True)
-    for name, C, kw, generate, quick in CONFIGS:
+    for name, C, kw, solve_kw, quick in CONFIGS:
         if quick or full or not os.path.exists(os.path.join(CERT_DIR, f"{name}.json")):
-            cert = run_config(name, C, kw, generate)
+            cert = run_config(name, C, kw, solve_kw)
             print(f"  solved {name}: LP {cert['lp_value']:.6f}, certified {cert['bound_float']:.6f} "
                   f"({cert['seconds']}s)")
     columns = ["candidates", "grid", "grid points", "misreports imposed", "LP optimum", "certified lower bound",

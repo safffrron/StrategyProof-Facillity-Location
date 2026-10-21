@@ -74,6 +74,75 @@ def refined_grid(candidates: Sequence, offsets: Iterable = ("1/500", "1/50", "1/
     return sorted(pts)
 
 
+def _interior_point_primal(c, A_ub, A_eq, col_upper, disp: bool, crossover: bool = False):
+    """Interior point method of HiGHS (needs the ``highspy`` package). Without crossover, returns the primal
+    solution; with crossover, returns a scipy-like result with vertex duals."""
+    import highspy
+    from scipy.sparse import vstack
+    A = vstack([A_ub, A_eq]).tocsc()
+    n_ub, n_eq = A_ub.shape[0], A_eq.shape[0]
+    lp = highspy.HighsLp()
+    lp.num_col_, lp.num_row_ = A.shape[1], A.shape[0]
+    lp.col_cost_ = np.asarray(c, dtype=float)
+    lp.col_lower_ = np.zeros(A.shape[1])
+    lp.col_upper_ = np.asarray(col_upper, dtype=float)
+    lp.row_lower_ = np.concatenate([np.full(n_ub, -highspy.kHighsInf), np.ones(n_eq)])
+    lp.row_upper_ = np.concatenate([np.zeros(n_ub), np.ones(n_eq)])
+    lp.a_matrix_.format_ = highspy.MatrixFormat.kColwise
+    lp.a_matrix_.start_ = A.indptr
+    lp.a_matrix_.index_ = A.indices
+    lp.a_matrix_.value_ = A.data
+    h = highspy.Highs()
+    h.setOptionValue("output_flag", bool(disp))
+    h.setOptionValue("solver", "ipm")
+    h.setOptionValue("run_crossover", "on" if crossover else "off")
+    h.passModel(lp)
+    h.run()
+    sol = h.getSolution()
+    x = np.asarray(sol.col_value)
+    if not crossover:
+        return x
+    status = h.getModelStatus()
+    return type("IpmResult", (), {"fun": float(np.dot(c, x)), "x": x,
+                                  "status": 0 if status == highspy.HighsModelStatus.kOptimal else 1,
+                                  "message": h.modelStatusToString(status),
+                                  "ineqlin": type("M", (), {"marginals": np.asarray(sol.row_dual[:n_ub])})()})()
+
+
+def _dual_simplex_multipliers(c, A_ub, A_eq, disp: bool):
+    """Solve the LP dual directly by simplex (``highspy``): max 1'w s.t. -A_ub'y + A_eq'w <= c, y >= 0, w free.
+    Its basis has one row per primal column, far fewer than the primal's rows, and an optimal y is exactly a set
+    of certificate multipliers. Returns a scipy-like result (marginals = -y)."""
+    import highspy
+    from scipy.sparse import hstack
+    n_ub, n_eq = A_ub.shape[0], A_eq.shape[0]
+    M = hstack([-A_ub.T, A_eq.T]).tocsc()          # rows: primal columns; columns: (y, w)
+    lp = highspy.HighsLp()
+    lp.num_col_, lp.num_row_ = M.shape[1], M.shape[0]
+    lp.col_cost_ = np.concatenate([np.zeros(n_ub), -np.ones(n_eq)])          # minimise -1'w
+    lp.col_lower_ = np.concatenate([np.zeros(n_ub), np.full(n_eq, -highspy.kHighsInf)])
+    lp.col_upper_ = np.full(n_ub + n_eq, highspy.kHighsInf)
+    lp.row_lower_ = np.full(M.shape[0], -highspy.kHighsInf)
+    lp.row_upper_ = np.asarray(c, dtype=float)
+    lp.a_matrix_.format_ = highspy.MatrixFormat.kColwise
+    lp.a_matrix_.start_ = M.indptr
+    lp.a_matrix_.index_ = M.indices
+    lp.a_matrix_.value_ = M.data
+    h = highspy.Highs()
+    h.setOptionValue("output_flag", bool(disp))
+    h.setOptionValue("solver", "simplex")
+    h.passModel(lp)
+    h.run()
+    status = h.getModelStatus()
+    sol = h.getSolution()
+    y = np.asarray(sol.col_value[:n_ub])
+    w = np.asarray(sol.col_value[n_ub:])
+    ok = status == highspy.HighsModelStatus.kOptimal
+    return type("DualResult", (), {"fun": float(w.sum()), "x": None, "status": 0 if ok else 1,
+                                   "message": h.modelStatusToString(status),
+                                   "ineqlin": type("M", (), {"marginals": -y})()})()
+
+
 class CandidateLP:
     """Best randomized TIE mechanism for two agents with reports on ``grid`` and outcomes in ``candidates``
     (max-cost objective), over symmetric mechanisms."""
@@ -113,7 +182,7 @@ class CandidateLP:
         oid, flip = self.orbit[(a, b)]
         return oid * self.K + (self.K - 1 - k if flip else k)
 
-    def _solve_once(self):
+    def _matrices(self):
         K, rows, cols, vals = self.K, [], [], []
         r = 0
         for a, a2, b in self.rows:   # agent truly at G[a] (other at G[b]) must not gain by reporting G[a2]
@@ -133,9 +202,19 @@ class CandidateLP:
         A_eq = coo_matrix((np.ones(n * K), (np.repeat(np.arange(n), K), np.arange(n * K))),
                           shape=(n, self.nv)).tocsr()
         c = np.zeros(self.nv); c[-1] = 1
-        for method in ("highs", "highs-ipm"):          # the interior-point fallback rescues rare HiGHS errors
+        return c, A_ub, A_eq
+
+    def _solve_once(self, method: str = "highs", disp: bool = False):
+        c, A_ub, A_eq = self._matrices()
+        if method == "highspy-ipm":                    # newer HiGHS: interior point plus crossover
+            res = _interior_point_primal(c, A_ub, A_eq, [1.0] * (self.nv - 1) + [100.0], disp, crossover=True)
+            if res.status != 0:
+                raise RuntimeError(res.message)
+            return res
+        r, n = A_ub.shape[0], A_eq.shape[0]
+        for m in dict.fromkeys((method, "highs-ipm")):  # the interior-point fallback rescues rare HiGHS errors
             res = linprog(c, A_ub=A_ub, b_ub=np.zeros(r), A_eq=A_eq, b_eq=np.ones(n),
-                          bounds=[(0, 1)] * (self.nv - 1) + [(0, 100)], method=method)
+                          bounds=[(0, 1)] * (self.nv - 1) + [(0, 100)], method=m, options={"disp": disp})
             if res.status == 0:
                 return res
         raise RuntimeError(res.message)
@@ -162,10 +241,13 @@ class CandidateLP:
         return new, worst
 
     def solve(self, reach: int = 2, generate: bool = True, tol: float = 1e-9, per_profile: int = 2,
-              max_iter: int = 100, verbose: bool = False) -> float:
+              max_iter: int = 100, verbose: bool = False, method: str = "highs", disp: bool = False,
+              polish_tol: float = 1e-6) -> float:
         """Optimal LP value. With ``generate=False`` only local misreports (and misreports to the candidates and
         the grid ends) are imposed: a further relaxation, so its value and certificate are still valid lower
-        bounds, and on large grids it is much faster."""
+        bounds, and on large grids it is much faster. ``method="highs-ipm"`` (interior point) is usually faster on
+        large grids; ``"ipm-polish"`` (needs the ``highspy`` package) runs the interior point method without its slow
+        crossover, then solves the dual of the LP restricted to the tight misreport rows by simplex; ``disp=True`` prints the solver's log."""
         special = [self.G.index(c) for c in self.C if c in self.G] + [0, self.m - 1]
         rows = set()
         for b in range(self.m):
@@ -174,9 +256,30 @@ class CandidateLP:
                     rows.update((a, a2, b) for a2 in (a - d, a + d) if 0 <= a2 < self.m)
                 rows.update((a, a2, b) for a2 in special if a2 != a)
         t0 = time.time()
+        if method == "ipm-polish":
+            # Interior point (no crossover) on all rows, then keep only the misreport rows that are tight at its
+            # solution and re-solve by simplex for exact vertex duals. Dropping rows is a relaxation, so the value
+            # is still a valid lower bound; with every tight row kept it equals the full optimum.
+            self.rows = sorted(rows)
+            c, A_ub, A_eq = self._matrices()
+            x = _interior_point_primal(c, A_ub, A_eq, [1.0] * (self.nv - 1) + [100.0], disp)
+            slack = -(A_ub[:len(self.rows)] @ x)
+            keep = [row for row, sl in zip(self.rows, slack) if sl <= polish_tol]
+            if verbose:
+                print(f"    interior point: LP {x[-1]:.6f}, {len(keep)} of {len(self.rows)} misreport rows tight, "
+                      f"{time.time() - t0:.0f}s", flush=True)
+            self.rows = keep
+            c, A_ub, A_eq = self._matrices()
+            self.result = _dual_simplex_multipliers(c, A_ub, A_eq, disp)
+            if self.result.status != 0:
+                raise RuntimeError(self.result.message)
+            self.converged = False
+            if verbose:
+                print(f"    simplex on tight rows: LP {self.result.fun:.6f}, {time.time() - t0:.0f}s", flush=True)
+            return float(self.result.fun)
         for it in range(max_iter):
             self.rows = sorted(rows)
-            res = self._solve_once()
+            res = self._solve_once(method, disp)
             if verbose:
                 print(f"    iteration {it}: {len(rows)} misreport rows, LP {res.fun:.6f}, "
                       f"{time.time() - t0:.0f}s", flush=True)

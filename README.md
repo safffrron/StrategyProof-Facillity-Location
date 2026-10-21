@@ -39,7 +39,7 @@ Headline findings (statements, proofs and novelty labels in [`docs/RESULTS.md`](
 - **Exact finite-n social-cost frontier** for the confidence family, $(3n-1-k)/(n+1+k)$ against $(3n+k-1)/(n-k+1)$. It refines Fang et al.'s asymptotic result, and randomised mixtures with the spike mechanism beat it.
 - **Asymmetric costs:** snapping fails, but rules on agents' favourite feasible points are strategyproof for every single-peaked cost, with tight bounds $2+\alpha$ and $2+1/\alpha$.
 - **Calibrated intervals from data:** conformal intervals plus strategyproof interval mechanisms give per-day certificates and much better worst days. A good point prediction still wins on average.
-- **Randomisation without predictions cannot reach 2.** With candidate locations, every truthful-in-expectation mechanism has max-cost ratio at least 2.267, so Tang et al.'s (2020) lower bound of 2 is not tight. The proof is computer-assisted: LP certificates checked in exact rational arithmetic (`results/e12_certificates/`).
+- **Randomisation without predictions cannot reach 2.** With candidate locations, every truthful-in-expectation mechanism has max-cost ratio at least 2.279, so Tang et al.'s (2020) lower bound of 2 is not tight. The proof is computer-assisted: LP certificates checked in exact rational arithmetic (`results/e12_certificates/`).
 - **Negative results:** the course brief's "prediction if inside, else median", "nearest feasible point to the prediction", "snap toward the prediction", and blocked-zone versions of LRM are all manipulable.
 
 ---
