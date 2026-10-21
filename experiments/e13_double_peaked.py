@@ -170,6 +170,7 @@ def part_c():
 CERT_DIR = os.path.join(RES_DIR, "e13_certificates")
 # name, agents, grid half-width K, grid step h, objective, a-priori ratio cap U, quick?
 LB_CONFIGS = [("sc_n3_coarse", 3, 4, "1/2", "sc", "2", True), ("sc_n3_fine", 3, 8, "1/4", "sc", "2", False),
+              ("sc_n5", 5, 4, "1/2", "sc", "2", False),
               ("mc_n2_wide", 2, 24, "1", "mc", "3", False)]
 
 

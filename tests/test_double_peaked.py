@@ -82,6 +82,23 @@ class TestDoublePeakedLowerBound(unittest.TestCase):
         weaker = dict(cert, tie=cert["tie"][1:])
         self.assertLess(verify_dp_certificate(weaker), Fraction(85, 82))
 
+    def test_five_agent_hand_proof(self):
+        """Proposition 23: the four-inequality proof of 84/79, checked exactly."""
+        from fractions import Fraction as F
+
+        def cost(y, x):
+            return 1 + min(abs(y - (x - 1)), abs(y - (x + 1)))
+        A = [F(-2), F(0), F(0), F(0), F(3, 2)]
+        B = [F(-2), F(0), F(0), F(0), F(2)]
+        pts = [F(k, 2) for k in range(-40, 41)]                     # all breakpoints, and beyond
+        sc = lambda y, X: sum(cost(y, x) for x in X)
+        f1 = min(sc(y, A) + cost(y, F(3, 2)) for y in pts)
+        f2 = min(sc(y, B) - F(5, 2) * (cost(y, F(3, 2)) + cost(y, F(-3, 2))) for y in pts)
+        self.assertEqual((min(sc(y, A) for y in pts), min(sc(y, B) for y in pts)), (F(13, 2), F(7)))
+        self.assertEqual((f1, f2), (F(9), F(-3)))
+        self.assertEqual(F(10, 79) * F(13, 2) + F(2, 79) * 7, 1)
+        self.assertEqual(F(10, 79) * f1 + F(2, 79) * f2, F(84, 79))
+
     def test_stored_certificates_verify(self):
         import glob, json, os
         from src.double_peaked_lp import verify_dp_certificate
