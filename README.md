@@ -21,8 +21,8 @@ is right (**consistency**) and never too bad when it is wrong (**robustness**), 
 agent) and the social cost (total distance).
 
 The full write-up is [`report/report.pdf`](report/report.pdf). Statements and proofs are also in
-[`docs/RESULTS.md`](docs/RESULTS.md), and the novelty check against the literature is in
-[`docs/LITERATURE_REVIEW.md`](docs/LITERATURE_REVIEW.md).
+[`docs/RESULTS.md`](docs/RESULTS.md), the literature review in [`docs/LITERATURE_REVIEW.md`](docs/LITERATURE_REVIEW.md),
+and a claim-by-claim novelty check in [`docs/NOVELTY_CHECK.md`](docs/NOVELTY_CHECK.md).
 
 ## Results at a glance
 
@@ -56,7 +56,7 @@ b and c are the peak distance and minimum cost of double-peaked agents.
 
 ```text
 report/             report.tex, report.pdf               (the write-up)
-docs/               RESULTS.md, LITERATURE_REVIEW.md, READING_LIST.md
+docs/               RESULTS.md, LITERATURE_REVIEW.md, NOVELTY_CHECK.md, READING_LIST.md
 src/                environment.py, agents.py, mechanisms.py, validator.py, visualization.py   (Week 1–2 baseline)
                     learning_augmented.py   mechanisms with predictions, intervals, snapping, randomisation
                     fast_validator.py       vectorised exhaustive strategyproofness checker
