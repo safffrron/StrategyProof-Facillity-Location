@@ -21,6 +21,8 @@ import e10_conformal_intervals
 import e11_randomization
 import e12_candidate_lower_bound
 import e13_double_peaked
+import e14_unconstrained_target
+import e15_social_cost_target
 
 STEPS = [
     ("E1 strategyproofness checks", e1_strategyproofness.main),
@@ -36,6 +38,8 @@ STEPS = [
     ("E11 randomization", e11_randomization.main),
     ("E12 randomised lower bound, candidate locations", e12_candidate_lower_bound.main),
     ("E13 double-peaked preferences", e13_double_peaked.main),
+    ("E14 predictions of the unconstrained optimum", e14_unconstrained_target.main),
+    ("E15 social cost, predictions of the median", e15_social_cost_target.main),
 ]
 
 if __name__ == "__main__":

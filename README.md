@@ -3,7 +3,7 @@
 **CS 6001 Course Project (Project 1) — IIT Bombay**
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-85%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-92%20passed-brightgreen.svg)]()
 
 | Team member | Roll No. |
 |---|---|
@@ -43,6 +43,8 @@ b and c are the peak distance and minimum cost of double-peaked agents.
 | T17 | No prediction, candidate locations: every randomised truthful-in-expectation mechanism has max-cost ratio ≥ **2.279**, so Tang et al.'s (2020) lower bound of 2 is not attainable | New, computer-assisted |
 | P19–T22 | Double-peaked preferences: the literal MinMaxP analogue is manipulable; randomised *window* rules are truthful in expectation; PredMed is (1, 1 + b/c) for social cost and PredMinMax is (1, max{1 + 2b/c, 2}) for max cost, optimal among 1-consistent rules when b ≤ c/2 | New |
 | P23–P24 | Double-peaked preferences, no prediction: first randomised social-cost lower bound above 1 (**84/79**, by hand); max-cost bound raised from 3/2 to **1.5264** | New |
+| T25–C26 | Predictions of the *unconstrained* optimum: MinMaxP\* is 1-consistent for them and has ratio min{1 + 2η_m, 3}, which is optimal; intervals around it give 1 + ω | New |
+| P27–T28 | Social cost: a perfect prediction of the median is worth nothing: MinMaxP\* becomes Median\* with ratio (3n−1)/(n+1), and no deterministic SP mechanism does better | New |
 
 ## How the claims are checked
 
@@ -63,9 +65,9 @@ src/                environment.py, agents.py, mechanisms.py, validator.py, visu
                     experiment_utils.py     predictions with controlled error, instance sampling, adversarial search
                     candidate_lower_bound.py   LP lower bounds + exact certificate checker (Theorem 17)
                     double_peaked.py, double_peaked_lp.py   two-peaked agents: mechanisms, checker, lower bounds
-experiments/        e1–e13 (one script per experiment), run_all.py
+experiments/        e1–e15 (one script per experiment), run_all.py
 results/, figures/  tables and figures produced by the experiments (certificates in results/e12_*, results/e13_*)
-tests/              85 unit tests
+tests/              92 unit tests
 scripts/            run_week1_2_demo.py  (Week 1–2 environment and validator demo)
 ```
 
