@@ -3,7 +3,7 @@
 **CS 6001 Course Project (Project 1) — IIT Bombay**
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-92%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-93%20passed-brightgreen.svg)]()
 
 | Team member | Roll No. |
 |---|---|
@@ -67,7 +67,7 @@ src/                environment.py, agents.py, mechanisms.py, validator.py, visu
                     double_peaked.py, double_peaked_lp.py   two-peaked agents: mechanisms, checker, lower bounds
 experiments/        e1–e15 (one script per experiment), run_all.py
 results/, figures/  tables and figures produced by the experiments (certificates in results/e12_*, results/e13_*)
-tests/              92 unit tests
+tests/              93 unit tests
 scripts/            run_week1_2_demo.py  (Week 1–2 environment and validator demo)
 ```
 
