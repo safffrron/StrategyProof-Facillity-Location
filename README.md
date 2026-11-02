@@ -1,196 +1,101 @@
-# Strategyproof Facility Location with Interval Predictions and Feasibility Constraints
+# Strategyproof Facility Location with Blocked Zones and Predictions
 
-**CS 6001 Course Project — Department of Computer Science & Engineering, IIT Bombay**
+Code for our CS 6001 course project (IIT Bombay, 2026), *Project 1: Strategyproof Facility Location on a Line*.
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-23%20passed-brightgreen.svg)]()
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+A planner places one facility on a road. Agents report their locations and may lie, some stretches of the road
+are blocked, and a machine-learned model predicts where the facility should go; the prediction may itself fall
+in a blocked zone. This repository contains the mechanisms we study and every experiment in our report.
+Section, theorem and figure numbers below refer to the report.
 
----
+| Member | Roll No. |
+|---|---|
+| Prajwal Nayak | 22B4246 |
+| Siva Kumar Dogga | 24M1528 |
+| Adnan Khan | 25M0843 |
+| Kislay Aditya Oj | 25M2111 |
 
-## 👥 Authors & Team
-- **Prajwal Nayak** — Roll No. `22B4246`
-- **Siva Kumar Dogga** — Roll No. `24M1528` ([24m1528@iitb.ac.in](mailto:24m1528@iitb.ac.in))
-- **Adnan Khan** — Roll No. `25M0843`
+## Setup
 
----
+Python 3.10 or later.
 
-## 📌 Project Overview & Motivation
-
-In classical theoretical mechanism design for facility location on a line (Moulin 1980; Procaccia & Tennenholtz 2009/2013), two foundational assumptions are standard:
-1. **Unconstrained Physical Space**: The facility can be placed anywhere along a continuous line $[0, L]$.
-2. **Prior-Free / Point Advice**: Machine learning models or external hints either do not exist or provide a perfectly certain single point $\hat{y}$.
-
-In real-world urban and infrastructure planning (such as placing a transit hub, emergency charging station, or campus router), both assumptions break down:
-1. **Blocked Zones & Feasibility Constraints**: Physical obstacles, private land, water bodies, or restricted corridors prevent placing facilities in certain sub-intervals. The feasible set $F \subset [0, L]$ is a disconnected union of intervals:
-   $$F = \bigcup_{k=1}^m [a_k, b_k]$$
-2. **Interval Predictions**: Machine learning models output confidence intervals $[\hat{p}_{\text{low}}, \hat{p}_{\text{high}}]$ reflecting epistemic uncertainty rather than point estimates.
-
-Existing learning-augmented fallback mechanisms (Agrawal et al. 2022/2024) rely on projecting predictions onto bounding intervals. However, when inaccessible zones are introduced, naive snapping to the nearest feasible location introduces discontinuities that strategic agents can exploit, compromising strategyproofness (truthfulness).
-
-This project investigates and develops learning-augmented mechanisms that maintain strict strategyproofness under both interval predictions and blocked zones, analyzing the resulting consistency-robustness Pareto tradeoffs.
-
----
-
-## 📅 Roadmap & Milestones
-
-| Phase | Milestone Description | Status |
-| :--- | :--- | :---: |
-| **Week 1–2** | **Discretized Environment, Baseline Median Mechanism, and Computational Strategyproofness Validator** | **Completed** |
-| **Week 3–4** | Standard Agrawal Single-Point Mechanism & Adaptation to Interval Predictions with Blocked Zones | Upcoming |
-| **Week 5** | Large-Scale Simulations: Consistency-Robustness Curves Across Error & Blocked Density | Planned |
-| **Week 6–7** | Adversarial Search for Worst-Case Bounds, Empirical Validation, and Final Report | Planned |
-
----
-
-## 🏗️ Repository Architecture
-
-```text
-CS 6001 Project/
-├── README.md                           # Master project documentation
-├── requirements.txt                    # Python package dependencies
-├── proposal.pdf                        # Initial submitted course project proposal
-├── src/
-│   ├── __init__.py                     # Package entry point
-│   ├── environment.py                  # 1D metric domain, feasible/blocked intervals, nearest projection
-│   ├── agents.py                       # Synthetic agent generator (Uniform, Gaussian, Bimodal, Clustered)
-│   ├── mechanisms.py                   # Baseline mechanisms (Median, Naive Projected, Mean), optimal solvers
-│   ├── validator.py                    # Brute-force strategyproofness verification engine
-│   └── visualization.py                # Academic plotting suite for environments, landscapes, and violations
-├── tests/
-│   ├── __init__.py
-│   ├── test_environment.py             # 7 unit tests for intervals, complement, grid snapping, projections
-│   ├── test_agents.py                  # 6 unit tests for parametric distributions, bounds, and seeding
-│   ├── test_mechanisms.py              # 6 unit tests for medians, tie-breaks, SC/MC costs, exact solvers
-│   └── test_validator.py               # 4 unit tests verifying truthfulness detection & manipulation flags
-├── scripts/
-│   └── run_week1_2_demo.py             # End-to-end execution script demonstrating all Week 1-2 components
-└── figures/                            # Publication-grade diagnostic figures generated by demo
-    ├── week1_2_environment_setup.png
-    ├── week1_2_median_truthful_landscape.png
-    ├── week1_2_mean_deviation_landscape.png
-    └── week1_2_mean_manipulation_counterexample.png
-```
-
----
-
-## 🔬 Core Components Implemented in Week 1–2
-
-### 1. The Discretized Environment (`src/environment.py`)
-- **Metric Domain**: Continuous line $[0, L]$ discretized into $N_{\text{grid}}$ points with uniform step size $\Delta x = \frac{L}{N_{\text{grid}} - 1}$.
-- **Interval Algebra**: Closed intervals $[a_k, b_k]$ with automatic merging, complementation (deriving feasible sets $F$ from blocked obstacles $B$, and vice versa), and metric distance.
-- **Deterministic Nearest Projection**:
-  $$y_{\text{proj}} = \arg\min_{f \in F} |x - f|$$
-  with deterministic boundary tie-breaking (`left` or `right`).
-- **Random Obstacle Generator**: Generates environments with target obstacle counts $m$ and blocked density $\rho \in [0, 0.9]$ using Dirichlet-distributed gap spacing.
-
-### 2. Synthetic Agent Population (`src/agents.py`)
-Provides sampling of agent peak profiles $x = (x_1, \dots, x_n)$ across multiple parametric distributions:
-- **`uniform`**: Uniformly distributed over $[0, L]$.
-- **`uniform_feasible`**: Uniformly distributed strictly over feasible intervals $F$.
-- **`gaussian`**: Truncated normal $\mathcal{N}(\mu, \sigma^2)$ restricted to $[0, L]$.
-- **`bimodal`**: Gaussian mixture model simulating two distinct demographic clusters.
-- **`clustered`**: $k$-cluster mixture simulating multiple population epicenters.
-- **`polarized`**: U-shaped Beta distribution concentrating agents near the boundaries.
-
-### 3. Baseline Mechanisms & Exact Optimal Benchmarks (`src/mechanisms.py`)
-- **`MedianMechanism` (Moulin 1980)**: For sorted reports $x_{(1)} \le \dots \le x_{(n)}$, selects $x_{(\lceil n/2 \rceil)}$. Deterministic left-median for even $n$ guarantees strict strategyproofness and optimal unconstrained social cost.
-- **`NaiveProjectedMedianMechanism`**: Computes the unconstrained median and projects onto $F$.
-- **`MeanMechanism`**: Arithmetic average included as a canonical manipulable benchmark to validate the testing engine.
-- **Exact Optimal Solvers**:
-  - **Optimal Social Cost (Utilitarian)**:
-    $$\min_{y \in F} \sum_{i=1}^n |y - x_i|$$
-    Exact global solver evaluates the finite set of extreme candidates $\{a_k, b_k\} \cup (\{x_i\} \cap F)$.
-  - **Optimal Maximum Cost (Egalitarian)**:
-    $$\min_{y \in F} \max_{i=1}^n |y - x_i|$$
-    Exact global solver evaluates the projection of midpoint $\frac{\min(x) + \max(x)}{2}$ onto each feasible interval.
-  - **Approximation Ratios**:
-    $$\alpha_{\text{SC}} = \frac{SC(y, x)}{SC^*(x, F)}, \qquad \alpha_{\text{MC}} = \frac{MC(y, x)}{MC^*(x, F)}$$
-
-### 4. Brute-Force Strategyproofness Validator (`src/validator.py`)
-A computational engine that verifies incentive compatibility (dominant-strategy truthfulness):
-$$\forall i \in \{1, \dots, n\}, \; \forall x'_i \in G: \quad |f(x_i, x_{-i}) - x_i| \le |f(x'_i, x_{-i}) - x_i| + \epsilon$$
-- **Deviation Counterexample Extraction**: Identifies the exact agent, true peak, profitable misreport, facility shift, and personal welfare gain:
-  $$\Delta_i = |f(x_i, x_{-i}) - x_i| - |f(x'_i, x_{-i}) - x_i| > \epsilon$$
-- **Verification Modes**:
-  1. `check_profile`: Full evaluation on an individual agent vector.
-  2. `verify_distribution`: Monte Carlo verification across $M$ synthetic profiles sampled from any generator.
-  3. `verify_exhaustive_grid`: Rigorous combinatorial verification over all $|G|^n$ profile combinations.
-
----
-
-## 🚀 Getting Started
-
-### 1. Installation
-Clone the repository and install required packages:
 ```bash
-git clone https://github.com/Sivadogga007/CS-6001-Project.git
-cd CS-6001-Project
+git clone https://github.com/safffrron/StrategyProof-Facillity-Location.git
+cd StrategyProof-Facillity-Location
 pip install -r requirements.txt
 ```
 
-### 2. Running Unit Tests
-Execute the full test suite (23 passing tests):
+## Run
+
+Unit tests (about 10 seconds):
+
 ```bash
-python3 -m pytest -v tests/
+python3 -m pytest
 ```
 
-### 3. Running the Week 1–2 Demo
-Run the end-to-end demonstration:
+All experiments, which regenerate `results/` and `figures/` (about six minutes on a laptop):
+
 ```bash
-python3 scripts/run_week1_2_demo.py
+python3 experiments/run_all.py
 ```
 
-Sample output:
+Each experiment also runs on its own, for example:
+
+```bash
+python3 experiments/e4_randomised_snapping.py
+```
+
+Every experiment checks its own numbers against the proved bounds and stops with an error if one fails.
+
+## Experiments
+
+| Script | Report | What it shows | Output | Time |
+|---|---|---|---|---|
+| `e1_strategyproofness.py` | Sec. 3.3, Lemma 2, Thm 9 | Exhaustive check of every profile, agent, misreport and prediction on a grid (n = 3, 4, 5): the median, leftmost and dictator rules, PhantomMedian[k], MinMaxP\*, the midpoint rule and randomised snapping (in expectation) are strategyproof; the mean and the brief's example rule are not | `results/e1_strategyproofness.md` | 1 min |
+| `e2_unconstrained_target.py` | Sec. 4.2, Thm 6 | Predictions of the unconstrained optimum m: adversarial search attains min{1 + 2η_m, 3}; 108,000 random instances never exceed it | `results/e2_worst_case.md`, `results/e2_typical.md` | 40 s |
+| `e3_median_predictions.py` | Sec. 4.2, Prop 7, Thm 8 | A median prediction turns MinMaxP\* into Median\*, ratio (3n − 1)/(n + 1); an integer program over all deterministic strategyproof mechanisms returns (4 − s)/(2 + s) | `results/e3_median_predictions.md` | 20 s |
+| `e4_randomised_snapping.py` | Sec. 4.3, Thms 3–5, 9–10, Figure 2 | Worst cases found by adversarial search: deterministic 1 + 2η and 1 + ω, randomised 1 + η and 1 + ω/2 | `results/e4_randomised_snapping.md`, `figures/e4_randomised_snapping.pdf` | 35 s |
+| `e5_optimal_mechanisms.py` | Sec. 4.3 | Optimisation over all mechanisms (MILP for deterministic, LP for truthful in expectation): slopes 2, 1, 1 and 1/2 | `results/e5_optimal_mechanisms.md` | 1.5 min |
+| `e6_candidate_lower_bound.py` | Sec. 4.4, Thm 11, Figure 3, Table 2 | With candidate sites {0, 2, 4}, every truthful-in-expectation mechanism has ratio at least 2.279; certificates re-checked in exact arithmetic | `results/e6_candidate_lower_bound.md`, `results/certificates/`, `figures/e6_candidate_lower_bound.pdf` | 5 s |
+| `e7_double_peaked.py` | Sec. 4.5, Prop 12, Thms 13–14 | Double-peaked costs: window rules are truthful in expectation, the clamp rule is not; search attains the robustness bounds | `results/e7_truthfulness.md`, `results/e7_performance.md` | 2 min |
+| `e8_confidence_sweep.py` | Sec. 3.3 (project brief) | The confidence family PhantomMedian[k] on the line: consistency and robustness against the theory for both objectives, and the max-cost ratio against the prediction error | `results/e8_confidence_sweep.md`, `figures/e8_confidence_sweep.pdf` | 10 s |
+
+By default `e6_candidate_lower_bound.py` re-solves the two small linear programs and re-verifies every stored
+certificate in `results/certificates/` in exact rational arithmetic. To re-solve the large grids as well (about
+an hour and several GB of memory), install the HiGHS interface and pass `--full`:
+
+```bash
+pip install highspy
+```
+
+```bash
+python3 experiments/e6_candidate_lower_bound.py --full
+```
+
+## The project brief, item by item
+
+| Brief asks for | Where |
+|---|---|
+| Median, leftmost-agent and dictatorial mechanisms | `MedianRule`, `LeftmostRule`, `DictatorRule` in `src/learning_augmented.py` |
+| Utilitarian and egalitarian optima, solved directly | `optimal_social_cost`, `optimal_max_cost` in `src/mechanisms.py` (batch versions in `src/learning_augmented.py`) |
+| Exhaustive deviation checker that passes the median and flags the mean | `src/fast_validator.py`; `e1_strategyproofness.py` |
+| Prediction-augmented mechanism with a confidence parameter, swept | `PhantomMedian[k]` (k copies of the prediction; k = 0 is the median, k = n - 1 is MinMaxP); `e8_confidence_sweep.py`. The brief's example rule, "the prediction if it lies between the extreme reports, else the median", is manipulable, and E1 shows a counterexample |
+| Predictions of controlled error, ratio against error, consistency-robustness curve against the theory | `e8_confidence_sweep.py` (line); `e4_randomised_snapping.py` (with blocked zones) |
+| Adversarial search for the worst instance, against the proved bound | `hill_climb` in `src/experiment_utils.py`; used by E2, E4, E7 and E8 |
+
+## Repository layout
+
 ```text
-======================================================================
-CS 6001: Week 1–2 Milestone Execution & Verification
-Strategyproof Facility Location with Discretization & Constraints
-======================================================================
-
-[Step 1] Constructing Discretized 1D Environment with Blocked Zones...
-  Domain:              [0, 10.0]
-  Grid Resolution:     1001 points (step = 0.0100)
-  Blocked Intervals:   [Interval(start=2.5, end=4.0), Interval(start=6.5, end=8.0)]
-  Feasible Intervals:  [Interval(start=0.0, end=2.5), Interval(start=4.0, end=6.5), Interval(start=8.0, end=10.0)]
-  Blocked Density:     30.0%
-  Feasible Density:    70.0%
-
-[Step 2] Generating Synthetic Agent Populations...
-  Generated 7 bimodal agents: [9.436, 1.854, 9.213, 8.282, 1.982, 7.811, 8.601]
-
-[Step 3] Running Baseline Mechanisms & Exact Optimal Benchmarks...
-  Unconstrained Median: y = 8.2819 (Feasible? True)
-  Projected Median:     y = 8.2819 (Feasible? True)
-  Optimal Social Cost:  y* = 8.2819 | Min SC = 15.6031
-  Optimal Max Cost:     y* = 5.6451 | Min MC = 3.7913
-  Projected Median SC:  15.6031 (Approx Ratio = 1.000)
-  Projected Median MC:  6.4280 (Approx Ratio = 1.695)
-
-[Step 4] Running Computational Strategyproofness Validator...
-  Median Mechanism (Unconstrained): PASSED (100 profiles, 0 violations)
-  Mean Mechanism (Manipulable):     FAILED (Violation caught, Gain = 0.001490)
+src/
+  environment.py            the road, its blocked zones, random layouts
+  agents.py                 random agent profiles
+  mechanisms.py             mechanism interface and exact optima
+  learning_augmented.py     snapping, MinMaxP*, the midpoint rule, randomised snapping (vectorised)
+  fast_validator.py         exhaustive strategyproofness / truthfulness-in-expectation checker
+  experiment_utils.py       random instances and the adversarial search
+  candidate_lower_bound.py  linear program and exact certificates for candidate sites
+  double_peaked.py          double-peaked costs, M1 and the window rules
+experiments/                e1-e8 (one script per claim) and run_all.py
+results/                    tables written by the experiments, and the certificates
+figures/                    Figures 2 and 3 of the report, and the confidence sweep
+tests/                      unit tests
 ```
-
----
-
-## 📊 Diagnostic Visualizations
-
-The demo script automatically outputs academic figures into `figures/`:
-1. `week1_2_environment_setup.png`: Visualizes 1D metric line, feasible intervals (green), blocked zones (red hatched), synthetic agent positions, and placed facility.
-2. `week1_2_median_truthful_landscape.png`: Plots agent personal cost as a function of reported position under the Median rule, demonstrating the global minimum at the truthful location.
-3. `week1_2_mean_deviation_landscape.png`: Shows the cost landscape under the Mean mechanism, highlighting the profitable deviation zone where lying strictly improves personal welfare.
-4. `week1_2_mean_manipulation_counterexample.png`: Side-by-side comparison of truthful reporting vs strategic misreporting.
-
----
-
-## 📖 References
-1. **P. Agrawal, E. Balkanski, V. Gkatzelis, T. Ou, and X. Tan.** *Learning-augmented mechanism design: leveraging predictions for facility location.* Mathematics of Operations Research, 49(4):2626–2651, 2024.
-2. **H. Chan, A. Filos-Ratsikas, B. Li, M. Li, and C. Wang.** *Mechanism design for facility location problems: a survey.* IJCAI, pages 4356–4365, 2021.
-3. **H. Moulin.** *On strategy-proofness and single peakedness.* Public Choice, 35(4):437–455, 1980.
-4. **A. D. Procaccia and M. Tennenholtz.** *Approximate mechanism design without money.* ACM Transactions on Economics and Computation, 1(4):18, 2013.
-
----
-
-## 📜 License
-Academic Coursework — IIT Bombay.

@@ -1,0 +1,45 @@
+{
+"setting": "two agents on a line, facility at a candidate location, expected maximum cost, truthful in expectation",
+"candidates": [
+"0",
+"2"
+],
+"symmetry": [
+"swap",
+"reflection"
+],
+"denominator": 1000000000,
+"grid_size": 25,
+"lp_value": 1.997005988023952,
+"all_misreports_imposed": true,
+"sp": [
+[
+"-2",
+"3",
+"-1",
+498502994
+],
+[
+"499/500",
+"3",
+"-2",
+498502994012
+],
+[
+"4",
+"-1",
+"3",
+498502994
+]
+],
+"ratio": [
+[
+"-1",
+"501/500",
+998003992
+]
+],
+"bound": "124812874247/62499999999",
+"bound_float": 1.9970059879839521,
+"name": "C2_basic"
+}
